@@ -3,9 +3,10 @@
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Category } from '@/lib/game/types'
 import { formatValue } from '@/lib/game/game-logic'
+import { useCountUp } from '@/lib/use-count-up'
 
 interface GameCardProps {
   name: string
@@ -16,6 +17,9 @@ interface GameCardProps {
   category: Category
   isActive?: boolean
   isRevealing?: boolean
+  isClickable?: boolean
+  isWrong?: boolean
+  disableAnimation?: boolean
 }
 
 export function GameCard({
@@ -27,16 +31,48 @@ export function GameCard({
   category,
   isActive = false,
   isRevealing = false,
+  isClickable = false,
+  isWrong = false,
+  disableAnimation = false,
 }: GameCardProps) {
-  const [imageError, setImageError] = React.useState(false)
+  const [imageError, setImageError] = useState(false)
+  const [startAnimation, setStartAnimation] = useState(false)
+  
+  // Animate the count-up (disabled if disableAnimation is true)
+  const animatedValue = useCountUp(value || 0, 2000, startAnimation && !isWrong && !disableAnimation)
+  
+  useEffect(() => {
+    // Never animate if disableAnimation is true
+    if (disableAnimation) {
+      setStartAnimation(false)
+      return
+    }
+    
+    if (showValue && value && value > 0 && !isWrong) {
+      // Small delay before starting animation
+      setStartAnimation(false)
+      setTimeout(() => setStartAnimation(true), 100)
+    } else if (isWrong) {
+      // Show immediately without animation for wrong answers
+      setStartAnimation(false)
+    } else {
+      setStartAnimation(false)
+    }
+  }, [showValue, value, isWrong, disableAnimation])
   
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
+      whileHover={isClickable ? { scale: 1.03, y: -8 } : {}}
+      whileTap={isClickable ? { scale: 0.97 } : {}}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        'relative overflow-hidden w-full rounded-2xl',
+        'relative overflow-hidden w-full rounded-2xl shadow-2xl border-4',
+        isClickable && 'cursor-pointer hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] hover:border-accent-cyan transition-all duration-300 border-white/20',
+        !isClickable && !isWrong && 'border-white/10',
+        isWrong && 'border-error border-4 shadow-[0_0_30px_rgba(239,68,68,0.6)]',
         isActive && 'ring-4 ring-accent-cyan/60'
       )}
     >
@@ -88,7 +124,7 @@ export function GameCard({
                   "font-mono font-bold text-white drop-shadow-lg",
                   category === 'spotify' ? 'text-2xl' : 'text-4xl'
                 )}>
-                  {formatValue(value, category)}
+                  {(isWrong || disableAnimation) ? formatValue(value, category) : formatValue(startAnimation ? animatedValue : value, category)}
                 </div>
               </motion.div>
             ) : (

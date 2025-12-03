@@ -63,13 +63,13 @@ export default function Home() {
           </p>
         </motion.div>
         
-        {/* Streak display */}
-        {streak.current > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex justify-center"
-          >
+        {/* Streak display & Leaderboard */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex justify-center items-center gap-3"
+        >
+          {streak.current > 0 && (
             <div className="glass-card px-6 py-3 flex items-center gap-4">
               <div className="text-2xl">🔥</div>
               <div>
@@ -77,8 +77,21 @@ export default function Home() {
                 <div className="text-xs text-text-muted">Best: {streak.best} days</div>
               </div>
             </div>
-          </motion.div>
-        )}
+          )}
+          
+          <Link href="/leaderboard">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="glass-card px-6 py-3 flex items-center gap-3 bg-accent-cyan/10 border-2 border-accent-cyan/30 hover:border-accent-cyan transition-all duration-200 cursor-pointer"
+            >
+              <div className="text-2xl">🏆</div>
+              <div>
+                <div className="text-sm font-bold text-accent-cyan">Leaderboard</div>
+              </div>
+            </motion.div>
+          </Link>
+        </motion.div>
         
         {/* Categories */}
         <div className="space-y-4">
@@ -158,12 +171,8 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="flex justify-center gap-6 text-sm text-text-muted"
+          className="flex justify-center text-sm text-text-muted"
         >
-          <Link href="/leaderboard" className="hover:text-accent-cyan transition-colors">
-            Leaderboard
-          </Link>
-          <span>•</span>
           <Link href="/how-to-play" className="hover:text-accent-cyan transition-colors">
             How to play
           </Link>

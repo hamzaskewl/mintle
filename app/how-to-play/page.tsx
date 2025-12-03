@@ -12,8 +12,8 @@ const steps = [
   },
   {
     emoji: '🤔',
-    title: 'Compare Values',
-    description: 'You\'ll see two items. Guess if the second one is higher or lower than the first.',
+    title: 'Click to Choose',
+    description: 'You\'ll see two items. Click on the card you think has the higher value!',
   },
   {
     emoji: '✅',
@@ -43,8 +43,14 @@ export default function HowToPlayPage() {
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-text-muted hover:text-text-primary transition-colors">
-            ← Back
+          <Link href="/">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200 shadow-lg"
+            >
+              Back
+            </motion.div>
           </Link>
           <h1 className="text-2xl font-bold text-text-primary">How to Play</h1>
           <div className="w-16" />
@@ -79,22 +85,28 @@ export default function HowToPlayPage() {
           <h3 className="text-lg font-bold text-text-primary mb-4">Example</h3>
           <div className="space-y-4 text-sm text-text-secondary">
             <p>
-              You see <span className="text-accent-cyan font-bold">The Godfather</span> with 
-              rating <span className="font-mono text-success">9.2</span>
+              <span className="font-bold text-text-primary">Left card:</span> <span className="text-accent-cyan font-bold">The Godfather</span> - 
+              rating <span className="font-mono text-text-muted">???</span>
             </p>
             <p>
-              Then you see <span className="text-accent-cyan font-bold">Inception</span> with 
-              a hidden rating <span className="font-mono text-text-muted">???</span>
+              <span className="font-bold text-text-primary">Right card:</span> <span className="text-accent-cyan font-bold">Inception</span> - 
+              rating <span className="font-mono text-text-muted">???</span>
             </p>
             <p>
-              You guess <span className="text-error font-bold">Lower</span> because you think 
-              Inception is rated lower than The Godfather.
+              Question: <span className="font-bold">"Which movie is rated higher?"</span>
             </p>
             <p>
-              Inception's rating is revealed: <span className="font-mono text-success">8.8</span>
+              You click on <span className="text-accent-cyan font-bold">The Godfather</span> because you think 
+              it has the higher rating.
+            </p>
+            <p>
+              Both ratings are revealed: The Godfather <span className="font-mono text-success">9.2</span> vs Inception <span className="font-mono text-success">8.8</span>
             </p>
             <p className="text-success font-bold">
-              ✓ Correct! 8.8 is lower than 9.2
+              ✓ Correct! The Godfather (9.2) is higher than Inception (8.8)
+            </p>
+            <p className="text-text-muted italic mt-2">
+              The winning card slides to the left, and a new movie appears on the right for round 2!
             </p>
           </div>
         </Card>

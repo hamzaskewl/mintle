@@ -27,8 +27,14 @@ export default function LeaderboardPage() {
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-text-muted hover:text-text-primary transition-colors">
-            ← Back
+          <Link href="/">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200 shadow-lg"
+            >
+              Back
+            </motion.div>
           </Link>
           <h1 className="text-2xl font-bold text-text-primary">Leaderboard</h1>
           <div className="w-16" />

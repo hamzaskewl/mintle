@@ -1,0 +1,10 @@
+# Sound files go here
+# 
+# Recommended:
+# - correct.mp3 (or .wav/.ogg) - plays on correct answer
+# - wrong.mp3 (or .wav/.ogg) - plays on incorrect answer
+# 
+# Once you add your sound files, update lib/sounds.ts with:
+# correctSound.src = '/sounds/correct.mp3'
+# wrongSound.src = '/sounds/wrong.mp3'
+
