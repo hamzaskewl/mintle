@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #1a1a2e;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+  }
+
+  html {
+    @apply bg-bg-primary text-text-primary antialiased;
+  }
+
+  body {
+    @apply min-h-screen bg-grid-pattern;
+    background-color: var(--bg-primary);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-bg-card/80 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+
+  .glow-border {
+    @apply relative;
+  }
+
+  .glow-border::before {
+    content: '';
+    @apply absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-accent-blue via-accent-cyan to-accent-purple opacity-0 transition-opacity duration-300;
+    z-index: -1;
+  }
+
+  .glow-border:hover::before {
+    @apply opacity-100;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-accent-blue hover:bg-accent-blue/80 text-white font-semibold rounded-xl transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+
+  .btn-game {
+    @apply px-8 py-4 font-bold text-lg rounded-xl transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+
+  .btn-higher {
+    @apply btn-game bg-gradient-to-r from-success to-emerald-400 text-white shadow-lg shadow-success/25;
+  }
+
+  .btn-lower {
+    @apply btn-game bg-gradient-to-r from-error to-rose-400 text-white shadow-lg shadow-error/25;
+  }
+
+  .score-dot {
+    @apply w-3 h-3 rounded-full transition-all duration-300;
+  }
+
+  .score-dot-empty {
+    @apply score-dot bg-white/20;
+  }
+
+  .score-dot-correct {
+    @apply score-dot bg-success shadow-lg shadow-success/50;
+  }
+
+  .score-dot-wrong {
+    @apply score-dot bg-error shadow-lg shadow-error/50;
+  }
+
+  .number-reveal {
+    @apply font-mono text-4xl font-bold tabular-nums;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-bg-secondary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-white/20 rounded-full hover:bg-white/30;
+}
+
+/* Selection */
+::selection {
+  @apply bg-accent-blue/30;
+}
+
