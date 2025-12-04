@@ -39,12 +39,36 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
     const otherCategory = category === 'movies' ? 'spotify' : 'movies'
     setHasPlayedOther(hasPlayedToday(otherCategory))
     
+    // Save score to leaderboard if address is available
+    const saveScore = async () => {
+      if (address) {
+        try {
+          const gameDate = new Date().toISOString().split('T')[0]
+          await fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              walletAddress: address,
+              category,
+              score,
+              gameDate
+            })
+          })
+        } catch (error) {
+          console.error('Failed to save score:', error)
+          // Non-fatal error - continue even if score save fails
+        }
+      }
+    }
+    
+    saveScore()
+    
     const interval = setInterval(() => {
       setTimeUntilReset(getTimeUntilReset())
     }, 1000)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [address, category, score])
   
   const isPerfect = score === total
   const shareText = `Mintle ${category === 'movies' ? '🎬' : '🎵'}\n${results.map(r => r === 'correct' ? '🟢' : '🔴').join('')}\nScore: ${score}/${total}\n🔥 Streak: ${streak.current}`
