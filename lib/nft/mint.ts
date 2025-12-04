@@ -3,9 +3,9 @@
 import { sdk } from '@farcaster/miniapp-sdk'
 import { MintNFTResponse, GameResultNFT } from './types'
 import { getContractAddress, prepareMintTransaction, NFT_ABI } from './contract'
-import { encodeFunctionData } from 'viem'
-import { getPaymasterSponsorship, prepareUserOperation, sendUserOperation } from './account-abstraction'
-import { createWalletClient, http, type Address } from 'viem'
+import { encodeFunctionData, type Address } from 'viem'
+import { sendCalls, getCapabilities } from '@wagmi/core'
+import { config } from '@/lib/wagmi/config'
 import { base, baseSepolia } from 'viem/chains'
 
 /**
@@ -37,14 +37,15 @@ export async function mintNFT(
     let address = userAddress
     
     if (!address) {
-      // Try to get from ethereum provider first (most reliable)
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        try {
-          const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' })
-          address = accounts[0]
-        } catch (e) {
-          console.log('Could not get address from ethereum provider:', e)
+      try {
+        // Try to get from Wagmi client
+        const client = config.getClient()
+        const account = client.account
+        if (account?.address) {
+          address = account.address
         }
+      } catch (e) {
+        console.log('Could not get address from Wagmi:', e)
       }
       
       // Fallback to Base SDK context
@@ -101,145 +102,105 @@ export async function mintNFT(
         args: [address as `0x${string}`, metadataUri]
       })
       
-      // Prepare user operation for account abstraction
-      const chainId = isTestnet ? '84532' : '8453' // Base Sepolia or Base Mainnet
+      // Note: Paymaster will be handled by Wagmi's sendCalls with capabilities
       
-      // Get nonce (simplified - in production, fetch from contract)
-      // For now, use 0 - in production you'd fetch the actual nonce
-      const userOp = prepareUserOperation(
-        address as Address,
-        contractAddress as Address,
-        metadataUri,
-        BigInt(0)
-      )
-      
-      // Get paymaster sponsorship for gasless transaction
-      const paymasterData = await getPaymasterSponsorship(userOp, chainId)
-      
-      if (paymasterData) {
-        // Apply paymaster data to user operation
-        userOp.paymasterAndData = paymasterData.paymasterAndData || ('0x' as any)
-        userOp.verificationGasLimit = paymasterData.verificationGasLimit || ('0x0' as any)
-        userOp.callGasLimit = paymasterData.callGasLimit || ('0x0' as any)
-        userOp.preVerificationGas = paymasterData.preVerificationGas || ('0x0' as any)
-        console.log('✅ Paymaster sponsorship obtained - transaction will be gasless!')
-      } else {
-        console.warn('⚠️ Paymaster sponsorship not available - user will pay gas')
-      }
-      
-      // Try to send transaction directly using ethereum provider
-      // This will work in Base Mini App or any wallet context
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
+      // Send transaction using Wagmi with Base Account
+      // This uses sendCalls which works with Base Account and supports paymaster
+      try {
+        if (!address) {
+          throw new Error('No wallet connected. Please connect your wallet to mint.')
+        }
+        
+        const chainId = isTestnet ? baseSepolia.id : base.id
+        const account = address as Address
+        
+        // Check if paymaster capability is supported
+        let supportsPaymaster = false
+        let paymasterUrl: string | undefined
+        
         try {
-          const ethereum = (window as any).ethereum
+          const capabilities = await getCapabilities(config as any, { account })
+          const baseCapabilities = capabilities[chainId]
+          supportsPaymaster = baseCapabilities?.paymasterService?.supported === true
           
-          // Request account access (if not already connected)
-          let userAddress = address
-          if (!userAddress) {
-            const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
-            userAddress = accounts[0]
+          // Get paymaster URL from Coinbase Developer Platform
+          // Format: https://api.developer.coinbase.com/rpc/v1/base/YOUR_API_KEY
+          // Use the API KEY (not the secret) from CDP
+          // Set in .env.local as: NEXT_PUBLIC_PAYMASTER_URL=https://api.developer.coinbase.com/rpc/v1/base/YOUR_API_KEY
+          if (supportsPaymaster && process.env.NEXT_PUBLIC_PAYMASTER_URL) {
+            paymasterUrl = process.env.NEXT_PUBLIC_PAYMASTER_URL
           }
-          
-          if (!userAddress) {
-            throw new Error('No wallet connected. Please connect your wallet to mint.')
-          }
-          
-          // Get the correct network
-          const networkId = await ethereum.request({ method: 'eth_chainId' })
-          const expectedChainId = isTestnet ? '0x14a34' : '0x2105' // Base Sepolia or Base Mainnet
-          
-          if (networkId !== expectedChainId) {
-            // Try to switch network
-            try {
-              await ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: expectedChainId }],
-              })
-            } catch (switchError: any) {
-              // If network doesn't exist, add it
-              if (switchError.code === 4902) {
-                const chainConfig = isTestnet ? {
-                  chainId: '0x14a34',
-                  chainName: 'Base Sepolia',
-                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://sepolia.base.org'],
-                  blockExplorerUrls: ['https://sepolia-explorer.base.org']
-                } : {
-                  chainId: '0x2105',
-                  chainName: 'Base',
-                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://mainnet.base.org'],
-                  blockExplorerUrls: ['https://basescan.org']
-                }
-                
-                await ethereum.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [chainConfig],
-                })
-              } else {
-                throw switchError
+        } catch (capError) {
+          console.log('Could not check paymaster capabilities:', capError)
+        }
+        
+        // Prepare the mint call
+        const calls = [
+          {
+            to: contractAddress as Address,
+            data: data as `0x${string}`,
+            value: BigInt(0),
+          },
+        ]
+        
+        // Send transaction with optional paymaster
+        const result = await sendCalls(config as any, {
+          account,
+          calls,
+          chainId,
+          capabilities: supportsPaymaster && paymasterUrl
+            ? {
+                paymasterService: {
+                  url: paymasterUrl,
+                },
               }
-            }
-          }
-          
-          // Estimate gas
-          const gasEstimate = await ethereum.request({
-            method: 'eth_estimateGas',
-            params: [{
-              from: userAddress,
-              to: contractAddress,
-              data: data,
-            }]
-          })
-          
-          // Send transaction
-          const txHash = await ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [{
-              from: userAddress,
-              to: contractAddress,
-              data: data,
-              value: '0x0',
-              gas: gasEstimate,
-            }]
-          })
-          
-          console.log('✅ Transaction sent! Hash:', txHash)
-          
-          const baseScanUrl = isTestnet
-            ? `https://sepolia.basescan.org/tx/${txHash}`
-            : `https://basescan.org/tx/${txHash}`
-          
-          console.log('🎉 NFT minted! View on BaseScan:', baseScanUrl)
-          
+            : undefined,
+        })
+        
+        // sendCalls returns an object with an id property
+        const txId = typeof result === 'string' ? result : (result as any).id || 'pending'
+        
+        console.log('✅ Transaction sent via Base Account! ID:', txId)
+        console.log('✅ Paymaster sponsored:', supportsPaymaster && !!paymasterUrl)
+        
+        // Note: sendCalls returns a transaction ID
+        // The transaction will be executed by the Base Account
+        // The actual transaction hash will be available after confirmation
+        
+        const baseScanUrl = isTestnet
+          ? `https://sepolia.basescan.org`
+          : `https://basescan.org`
+        
+        console.log('🎉 NFT mint initiated! Transaction ID:', txId)
+        console.log('View on BaseScan:', baseScanUrl)
+        
+        return {
+          success: true,
+          metadataUri,
+          tokenId,
+          txHash: txId, // Transaction ID - will be confirmed by Base Account
+          paymasterSponsored: supportsPaymaster && !!paymasterUrl,
+        }
+      } catch (txError: any) {
+        console.error('Transaction error:', txError)
+        
+        // If user rejected, don't show error
+        if (txError.code === 4001 || txError.message?.includes('User rejected') || txError.message?.includes('rejected')) {
           return {
-            success: true,
+            success: false,
+            error: 'Transaction cancelled by user',
             metadataUri,
             tokenId,
-            txHash,
-            paymasterSponsored: !!paymasterData,
           }
-        } catch (txError: any) {
-          console.error('Transaction error:', txError)
-          
-          // If user rejected, don't show error
-          if (txError.code === 4001 || txError.message?.includes('User rejected')) {
-            return {
-              success: false,
-              error: 'Transaction cancelled by user',
-              metadataUri,
-              tokenId,
-            }
-          }
-          
-          // Otherwise, return metadata but note transaction failed
-          return {
-            success: true,
-            metadataUri,
-            tokenId,
-            paymasterSponsored: !!paymasterData,
-            error: `Transaction failed: ${txError.message}. Metadata generated successfully.`,
-          }
+        }
+        
+        // Otherwise, return metadata but note transaction failed
+        return {
+          success: true,
+          metadataUri,
+          tokenId,
+          paymasterSponsored: false,
+          error: `Transaction failed: ${txError.message}. Metadata generated successfully.`,
         }
       }
       
@@ -252,7 +213,7 @@ export async function mintNFT(
         success: true,
         metadataUri,
         tokenId,
-        paymasterSponsored: !!paymasterData,
+        paymasterSponsored: false,
         txData: {
           to: contractAddress,
           data: data as `0x${string}`,

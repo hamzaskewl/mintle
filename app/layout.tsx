@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Outfit, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { BaseMiniAppBootstrap } from '@/components/BaseMiniAppBootstrap'
+import { WagmiProvider } from '@/components/providers/WagmiProvider'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -51,20 +52,22 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${jetbrains.variable}`}>
       <body className="font-sans">
-        <BaseMiniAppBootstrap>
-          <div className="min-h-screen flex flex-col">
-            {/* Ambient background effects */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-blue/10 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent-purple/10 rounded-full blur-3xl" />
+        <WagmiProvider>
+          <BaseMiniAppBootstrap>
+            <div className="min-h-screen flex flex-col">
+              {/* Ambient background effects */}
+              <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-blue/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent-purple/10 rounded-full blur-3xl" />
+              </div>
+              
+              {/* Main content */}
+              <main className="relative z-10 flex-1">
+                {children}
+              </main>
             </div>
-            
-            {/* Main content */}
-            <main className="relative z-10 flex-1">
-              {children}
-            </main>
-          </div>
-        </BaseMiniAppBootstrap>
+          </BaseMiniAppBootstrap>
+        </WagmiProvider>
       </body>
     </html>
   )
