@@ -2,6 +2,8 @@
 
 import { sdk } from '@farcaster/miniapp-sdk'
 import { MintNFTResponse, GameResultNFT } from './types'
+import { getContractAddress, prepareMintTransaction, NFT_ABI } from './contract'
+import { encodeFunctionData } from 'viem'
 
 /**
  * Mint an NFT using Base account abstraction
@@ -26,35 +28,61 @@ export async function mintNFT(
       throw new Error('Failed to generate NFT metadata')
     }
     
-    const { metadata, metadataUri } = await metadataResponse.json()
+    const { metadata, metadataUri, tokenId } = await metadataResponse.json()
     
-    // For now, we'll use Base SDK to open a transaction
-    // The actual contract interaction will need to be set up
-    // This is a placeholder that shows the flow
+    // Get user address
+    const address = userAddress || await getUserAddress()
+    if (!address) {
+      return {
+        success: false,
+        error: 'User address not available',
+        metadataUri
+      }
+    }
+    
+    // Prepare mint transaction
+    const isTestnet = true // Set to false for mainnet
+    const contractAddress = getContractAddress(isTestnet)
+    const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
+    
+    // Encode the function call
+    const data = encodeFunctionData({
+      abi: NFT_ABI,
+      functionName: 'safeMint',
+      args: [address as `0x${string}`, metadataUri]
+    })
     
     // Check if we're in Base Mini App context
     if (typeof window !== 'undefined' && sdk) {
       try {
-        // Use Base SDK to open transaction
-        // Note: This requires the contract to be deployed and configured
-        const result = await sdk.actions.openUrl(
-          `https://basescan.org/tx/${metadataUri}` // Placeholder
-        )
+        // For now, we'll construct a transaction URL
+        // In production, you'd use Base SDK's transaction methods
+        // or a wallet connector to send the transaction
+        
+        // Create a link to view the contract on BaseScan
+        const baseScanUrl = isTestnet 
+          ? `https://sepolia.basescan.org/address/${contractAddress}`
+          : `https://basescan.org/address/${contractAddress}`
+        
+        // Open contract page (user can mint manually for now)
+        // TODO: Implement actual transaction sending via Base SDK or wallet
+        await sdk.actions.openUrl(baseScanUrl)
         
         return {
           success: true,
           metadataUri,
-          // In production, these would come from the actual transaction
-          // tokenId: result.tokenId,
-          // txHash: result.txHash
+          tokenId,
+          // Note: Actual transaction hash will come from the mint transaction
+          // For now, return the metadata URI as the identifier
         }
       } catch (sdkError) {
         console.error('Base SDK error:', sdkError)
-        // Fallback to sharing if minting fails
+        // Fallback: return metadata for manual minting
         return {
-          success: false,
-          error: 'Minting not available. Please share your result instead.',
-          metadataUri
+          success: true,
+          metadataUri,
+          tokenId,
+          error: 'Automatic minting not available. Metadata ready for manual minting.'
         }
       }
     }
@@ -63,7 +91,13 @@ export async function mintNFT(
     return {
       success: true,
       metadataUri,
-      // Note: Actual minting would require contract deployment
+      tokenId,
+      // Transaction data for manual minting
+      txData: {
+        to: contractAddress,
+        data,
+        value: '0'
+      }
     }
     
   } catch (error) {

@@ -11,8 +11,8 @@ import { base, baseSepolia } from 'viem/chains'
  */
 export const NFT_CONTRACT_ADDRESS = {
   // Update with your deployed contract address
-  base: '0x0000000000000000000000000000000000000000', // Base mainnet
-  baseSepolia: '0x0000000000000000000000000000000000000000', // Base Sepolia testnet
+  base: '0x0000000000000000000000000000000000000000', // Base mainnet (update when ready)
+  baseSepolia: '0x6E3Cf9F63eb409E4071422a0467F9Bb81bB4Bd06', // Base Sepolia testnet
 }
 
 /**
