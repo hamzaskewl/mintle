@@ -117,8 +117,11 @@ async function getUserAddress(): Promise<string | undefined> {
     if (typeof window !== 'undefined' && sdk) {
       // Base SDK context should provide user address
       // This is a placeholder - actual implementation depends on SDK version
+      // TODO: Update based on actual Base SDK API when available
       const context = await sdk.context
-      return context?.user?.address
+      // The actual property path may vary - check Base SDK docs
+      // For now, return undefined and let the caller provide the address
+      return undefined
     }
   } catch (error) {
     console.error('Error getting user address:', error)
