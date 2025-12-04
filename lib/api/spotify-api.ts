@@ -32,7 +32,7 @@ interface SpotifyArtistResponse {
 /**
  * Get Spotify access token using Client Credentials flow
  */
-async function getSpotifyToken(): Promise<string> {
+export async function getSpotifyAccessToken(): Promise<string> {
   if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
     throw new Error('Spotify credentials not configured. Check SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in .env.local')
   }
@@ -62,7 +62,7 @@ async function getSpotifyToken(): Promise<string> {
  */
 export async function searchSpotifyArtist(artistName: string): Promise<SpotifyArtistResponse | null> {
   try {
-    const token = await getSpotifyToken()
+    const token = await getSpotifyAccessToken()
     
     const searchUrl = new URL('https://api.spotify.com/v1/search')
     searchUrl.searchParams.set('q', artistName)
@@ -94,7 +94,7 @@ export async function searchSpotifyArtist(artistName: string): Promise<SpotifyAr
  */
 export async function getSpotifyArtist(artistId: string): Promise<SpotifyArtistResponse | null> {
   try {
-    const token = await getSpotifyToken()
+    const token = await getSpotifyAccessToken()
     
     const response = await fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
       headers: {

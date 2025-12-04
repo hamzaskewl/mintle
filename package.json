@@ -7,16 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "populate-movies": "tsx --env-file=.env.local scripts/populate-movies-pool.ts",
-    "prepare-daily": "tsx --env-file=.env.local scripts/test-daily-prep.ts"
+    "populate-db": "tsx --env-file=.env.local scripts/populate-db.ts"
   },
   "dependencies": {
+    "@farcaster/miniapp-sdk": "^0.2.1",
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.17.0",
     "cheerio": "^1.0.0-rc.12",
     "clsx": "^2.1.0",
     "framer-motion": "^11.15.0",
-    "next": "^15.1.0",
+    "next": "^16.0.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.2.0",
@@ -29,11 +29,10 @@
     "autoprefixer": "^10.4.17",
     "dotenv": "^16.4.5",
     "eslint": "^9.16.0",
-    "eslint-config-next": "^15.1.0",
+    "eslint-config-next": "^16.0.7",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }
-

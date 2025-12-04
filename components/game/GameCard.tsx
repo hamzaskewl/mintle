@@ -34,7 +34,8 @@ export function GameCard({
   isClickable = false,
   isWrong = false,
   disableAnimation = false,
-}: GameCardProps) {
+  enableLayout = false,
+}: GameCardProps & { enableLayout?: boolean }) {
   const [imageError, setImageError] = useState(false)
   const [startAnimation, setStartAnimation] = useState(false)
   
@@ -62,7 +63,7 @@ export function GameCard({
   
   return (
     <motion.div
-      layout
+      layout={enableLayout}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       whileHover={isClickable ? { scale: 1.03, y: -8 } : {}}

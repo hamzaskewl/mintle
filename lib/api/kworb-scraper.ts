@@ -49,6 +49,13 @@ export async function scrapeSpotifyListeners(): Promise<SpotifyArtist[]> {
       const peakListenersText = $(cells[5]).text().trim().replace(/,/g, '')
       const peakListeners = parseInt(peakListenersText) || 0
       
+      // Filter out non-Latin names (simple check for mostly ASCII)
+      // Allow accents but reject fully non-Latin scripts like Korean, Japanese, Arabic etc.
+      // This regex allows Latin letters, numbers, spaces, and common punctuation.
+      // It rejects if it finds characters outside typical Latin ranges.
+      const isLatin = /^[\u0000-\u00FF\u0100-\u017F\u2000-\u206F]+$/.test(name)
+      if (!isLatin) return
+
       artists.push({
         rank,
         name,

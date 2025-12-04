@@ -1,12 +1,11 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { getTimeUntilReset } from '@/lib/game/daily-seed'
 import { getTodayScore, getStreak } from '@/lib/game/game-logic'
 import { useEffect, useState } from 'react'
-import { DevPanel } from '@/components/dev/DevPanel'
 
 const categories = [
   {
@@ -29,7 +28,6 @@ export default function Home() {
   const [streak, setStreak] = useState({ current: 0, best: 0 })
   const [timeUntilReset, setTimeUntilReset] = useState({ hours: 0, minutes: 0, seconds: 0 })
   const [playedStatus, setPlayedStatus] = useState<Record<string, number | null>>({})
-  const [showDevPanel, setShowDevPanel] = useState(false)
   
   useEffect(() => {
     setStreak(getStreak())
@@ -153,34 +151,6 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Endless Mode - Testing */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="pt-4 border-t border-white/10"
-        >
-          <p className="text-xs text-text-muted text-center mb-3">🧪 Testing Mode (Endless)</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/play/spotify/endless">
-              <Card hover className="group text-center py-4">
-                <div className="text-2xl mb-1">🎵</div>
-                <div className="text-sm font-medium text-text-primary group-hover:text-success transition-colors">
-                  Spotify Endless
-                </div>
-              </Card>
-            </Link>
-            <Link href="/play/movies/endless">
-              <Card hover className="group text-center py-4">
-                <div className="text-2xl mb-1">🎬</div>
-                <div className="text-sm font-medium text-text-primary group-hover:text-accent-cyan transition-colors">
-                  Movies Endless
-                </div>
-              </Card>
-            </Link>
-          </div>
-        </motion.div>
-        
         {/* Next reset */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -206,21 +176,8 @@ export default function Home() {
           <Link href="/how-to-play" className="hover:text-accent-cyan transition-colors">
             How to play
           </Link>
-          <button
-            onClick={() => setShowDevPanel(true)}
-            className="hover:text-accent-cyan transition-colors"
-          >
-            🛠️ Dev Panel
-          </button>
         </motion.div>
       </div>
-
-      {/* Dev Panel Overlay */}
-      <AnimatePresence>
-        {showDevPanel && (
-          <DevPanel onClose={() => setShowDevPanel(false)} />
-        )}
-      </AnimatePresence>
     </div>
   )
 }

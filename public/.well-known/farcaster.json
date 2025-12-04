@@ -1,0 +1,33 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "baseBuilder": {
+    "ownerAddress": "" 
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "MorL",
+    "homeUrl": "https://morl.vercel.app",
+    "iconUrl": "https://morl.vercel.app/icon.png",
+    "splashImageUrl": "https://morl.vercel.app/splash.png",
+    "splashBackgroundColor": "#020617",
+    "webhookUrl": "https://morl.vercel.app/api/webhook",
+    "subtitle": "Guess which has more",
+    "description": "MorL is a fast, addictive guessing game for IMDB ratings and Spotify listeners.",
+    "screenshotUrls": [
+      "https://morl.vercel.app/screen1.png"
+    ],
+    "primaryCategory": "games",
+    "tags": ["game", "puzzle", "music", "movies"],
+    "heroImageUrl": "https://morl.vercel.app/og.png",
+    "tagline": "More or Less? Prove it.",
+    "ogTitle": "MorL",
+    "ogDescription": "Guess which artist has more monthly listeners or higher IMDB rating.",
+    "ogImageUrl": "https://morl.vercel.app/og.png",
+    "noindex": false
+  }
+}
+
