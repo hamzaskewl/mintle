@@ -12,10 +12,10 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const tokenId = params.id
+    const { id: tokenId } = await params
     
     // Option 1: Fetch from database (if you store it)
     // This requires storing metadata when minting
