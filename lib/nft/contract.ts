@@ -22,10 +22,12 @@ export const NFT_CONTRACT_ADDRESS = {
 export const NFT_ABI = parseAbi([
   'function mint(address to, string memory tokenURI) external returns (uint256)',
   'function safeMint(address to, string memory tokenURI) external returns (uint256)',
-  'function publicMint(address to, string memory uri) external returns (uint256)',
+  'function publicMint(address to, string memory uri, uint256 score, uint8 category, string memory date, bytes memory signature) external returns (uint256)',
   'function tokenURI(uint256 tokenId) external view returns (string memory)',
   'function ownerOf(uint256 tokenId) external view returns (address)',
   'function balanceOf(address owner) external view returns (uint256)',
+  'function signer() external view returns (address)',
+  'function setSigner(address newSigner) external',
 ])
 
 /**

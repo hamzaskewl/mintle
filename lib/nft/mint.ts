@@ -28,10 +28,36 @@ export async function mintNFT(
     })
     
     if (!metadataResponse.ok) {
-      throw new Error('Failed to generate NFT metadata')
+      const errorData = await metadataResponse.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.error || 'Failed to generate NFT metadata',
+        details: errorData.details
+      }
     }
     
-    const { metadata, metadataUri, tokenId } = await metadataResponse.json()
+    const responseData = await metadataResponse.json()
+    const { metadata, metadataUri, tokenId, signature, error: apiError } = responseData
+    
+    // Check if API returned an error
+    if (apiError || !responseData.success) {
+      return {
+        success: false,
+        error: apiError || 'Failed to generate NFT metadata',
+        metadataUri: responseData.metadataUri,
+        tokenId: responseData.tokenId
+      }
+    }
+    
+    // Signature is required for minting
+    if (!signature) {
+      return {
+        success: false,
+        error: 'Server did not provide signature. Minting requires server verification.',
+        metadataUri,
+        tokenId
+      }
+    }
     
     // Get user address - try multiple methods
     let address = userAddress
@@ -95,13 +121,20 @@ export async function mintNFT(
       const contractAddress = getContractAddress(isTestnet)
       const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
       
-      // Encode the function call
-      // Use publicMint instead of safeMint since safeMint requires onlyOwner
-      // If publicMint doesn't exist, fall back to safeMint (will fail if not owner)
+      // Encode the function call with signature verification
+      // publicMint now requires signature, score, category, and date for verification
+      const categoryNum = gameResult.category === 'movies' ? 0 : 1
       const data = encodeFunctionData({
         abi: NFT_ABI,
-        functionName: 'publicMint', // Use publicMint which anyone can call
-        args: [address as `0x${string}`, metadataUri]
+        functionName: 'publicMint',
+        args: [
+          address as `0x${string}`, 
+          metadataUri,
+          BigInt(gameResult.score),
+          categoryNum,
+          gameResult.date,
+          signature as `0x${string}`
+        ]
       })
       
       // Note: Paymaster will be handled by Wagmi's sendCalls with capabilities
