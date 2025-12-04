@@ -1,8 +1,7 @@
 import { 
-  signTypedData,
-  privateKeyToAddress
+  signTypedData
 } from 'viem'
-import { privateKeyToAccount } from 'viem/accounts'
+import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
 
 /**
  * EIP-712 signature generation for NFT minting
