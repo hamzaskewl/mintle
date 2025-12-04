@@ -16,9 +16,7 @@ export const config = createConfig({
     [baseSepolia.id]: http(),
   },
   connectors: [
-    farcasterMiniApp({
-      // This automatically connects to Base Account in Base Mini App
-    }),
+    farcasterMiniApp(), // Automatically connects to Base Account in Base Mini App
   ],
 })
 
