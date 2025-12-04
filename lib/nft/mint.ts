@@ -35,8 +35,27 @@ export async function mintNFT(
     
     // If we have an address, prepare the mint transaction
     if (address) {
-      // Prepare mint transaction
-      const isTestnet = true // Set to false for mainnet
+      // Detect environment: Use testnet for web/testing, mainnet for Base Mini App
+      // Base Mini App typically runs on mainnet, but we can test on Sepolia in web preview
+      let isInBaseApp = false
+      try {
+        if (typeof window !== 'undefined' && sdk) {
+          const context = await sdk.context
+          isInBaseApp = context !== null && context !== undefined
+        }
+      } catch (e) {
+        // Not in Base app context
+        isInBaseApp = false
+      }
+      
+      // Use testnet if: explicitly set via env, or we're in web (not Base app), or for testing
+      // Default to testnet for now until mainnet contract is deployed
+      const isTestnet = process.env.NEXT_PUBLIC_USE_TESTNET === 'true' || 
+                       !isInBaseApp ||
+                       true // Default to testnet for now
+      
+      console.log('Minting environment:', { isInBaseApp, isTestnet, address })
+      
       const contractAddress = getContractAddress(isTestnet)
       const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
       
@@ -50,25 +69,25 @@ export async function mintNFT(
       // Check if we're in Base Mini App context
       if (typeof window !== 'undefined' && sdk) {
         try {
-          // For now, we'll construct a transaction URL
-          // In production, you'd use Base SDK's transaction methods
-          // or a wallet connector to send the transaction
-          
-          // Create a link to view the contract on BaseScan
+          // In Base Mini App, we can potentially send transactions
+          // For now, we'll show the contract and let users know about testnet
           const baseScanUrl = isTestnet 
             ? `https://sepolia.basescan.org/address/${contractAddress}`
             : `https://basescan.org/address/${contractAddress}`
           
-          // Open contract page (user can mint manually for now)
-          // TODO: Implement actual transaction sending via Base SDK or wallet
-          await sdk.actions.openUrl(baseScanUrl)
+          // If we're in Base Mini App but using testnet, show a message
+          if (isInBaseApp && isTestnet) {
+            console.warn('Base Mini App detected but using testnet. Base Mini App typically uses mainnet.')
+          }
           
+          // For now, just share the result (minting will be implemented later)
+          // The metadata is ready, user can share their result
           return {
             success: true,
             metadataUri,
             tokenId,
-            // Note: Actual transaction hash will come from the mint transaction
-            // For now, return the metadata URI as the identifier
+            // Note: Actual on-chain minting will be implemented with Base SDK transaction methods
+            // For now, metadata is generated and ready to share
           }
         } catch (sdkError) {
           console.error('Base SDK error:', sdkError)
