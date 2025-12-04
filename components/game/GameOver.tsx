@@ -10,6 +10,8 @@ import { getStreak, hasPlayedToday } from '@/lib/game/game-logic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { mintNFT, shareToBase } from '@/lib/nft/mint'
+import { GameResultNFT } from '@/lib/nft/types'
 
 interface GameOverProps {
   score: number
@@ -23,6 +25,10 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
   const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilReset())
   const [streak, setStreak] = useState({ current: 0, best: 0 })
   const [hasPlayedOther, setHasPlayedOther] = useState(false)
+  const [isMinting, setIsMinting] = useState(false)
+  const [mintSuccess, setMintSuccess] = useState(false)
+  const [nftUrl, setNftUrl] = useState<string | null>(null)
+  const [mintError, setMintError] = useState<string | null>(null)
   
   useEffect(() => {
     setStreak(getStreak())
@@ -45,14 +51,60 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
   const nextUrl = hasPlayedOther ? '/' : `/play/${otherCategory}`
   const nextLabel = hasPlayedOther ? 'Home' : 'Next'
   
-  const handleShare = async () => {
+  const handleMintAndShare = async () => {
+    setIsMinting(true)
+    setMintError(null)
+    
+    try {
+      const gameResult: GameResultNFT = {
+        category,
+        score,
+        total,
+        results,
+        date: new Date().toISOString().split('T')[0],
+        streak: streak.current,
+        perfect: isPerfect
+      }
+      
+      // Mint NFT
+      const mintResult = await mintNFT(gameResult)
+      
+      if (mintResult.success && mintResult.metadataUri) {
+        setMintSuccess(true)
+        setNftUrl(mintResult.metadataUri)
+        
+        // Share to Base with NFT link
+        const shared = await shareToBase(gameResult, mintResult.metadataUri)
+        if (!shared) {
+          // Fallback to regular share
+          await handleShare(mintResult.metadataUri)
+        }
+      } else {
+        setMintError(mintResult.error || 'Failed to mint NFT')
+        // Still try to share
+        await shareToBase(gameResult)
+      }
+    } catch (error) {
+      console.error('Mint and share error:', error)
+      setMintError(error instanceof Error ? error.message : 'Failed to mint NFT')
+    } finally {
+      setIsMinting(false)
+    }
+  }
+  
+  const handleShare = async (nftUrl?: string) => {
+    const shareTextWithNFT = nftUrl 
+      ? `${shareText}\n\nMinted NFT: ${nftUrl}`
+      : shareText
+    
     if (navigator.share) {
       await navigator.share({
         title: 'MorL - Daily More or Less',
-        text: shareText,
+        text: shareTextWithNFT,
+        url: nftUrl || 'https://morless.vercel.app'
       })
     } else {
-      await navigator.clipboard.writeText(shareText)
+      await navigator.clipboard.writeText(shareTextWithNFT)
       alert('Results copied to clipboard!')
     }
   }
@@ -122,22 +174,76 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           </div>
         </div>
         
+        {/* Mint Status */}
+        {mintSuccess && nftUrl && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-success/20 border border-success/50 rounded-lg"
+          >
+            <div className="text-sm text-success font-semibold mb-1">
+              ✨ NFT Minted Successfully!
+            </div>
+            <a
+              href={nftUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-success/80 hover:text-success underline break-all"
+            >
+              View NFT
+            </a>
+          </motion.div>
+        )}
+        
+        {mintError && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-error/20 border border-error/50 rounded-lg"
+          >
+            <div className="text-sm text-error font-semibold">
+              ⚠️ {mintError}
+            </div>
+          </motion.div>
+        )}
+        
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-2">
           <Button
-            variant="secondary"
-            className="flex-1 py-2"
-            onClick={handleShare}
+            variant="primary"
+            className="w-full py-3"
+            onClick={handleMintAndShare}
+            disabled={isMinting}
           >
-            Share 📤
+            {isMinting ? (
+              <>
+                <span className="inline-block animate-spin mr-2">⏳</span>
+                Minting NFT...
+              </>
+            ) : (
+              <>
+                🎨 Mint NFT & Share
+              </>
+            )}
           </Button>
-          <Button 
-            variant="primary" 
-            className="flex-1 py-2"
-            onClick={handleNext}
-          >
-            {nextLabel} {!hasPlayedOther && (category === 'movies' ? '🎵' : '🎬')}
-          </Button>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="flex-1 py-2"
+              onClick={() => handleShare(nftUrl || undefined)}
+              disabled={isMinting}
+            >
+              Share 📤
+            </Button>
+            <Button 
+              variant="secondary" 
+              className="flex-1 py-2"
+              onClick={handleNext}
+            >
+              {nextLabel} {!hasPlayedOther && (category === 'movies' ? '🎵' : '🎬')}
+            </Button>
+          </div>
         </div>
       </Card>
     </motion.div>
