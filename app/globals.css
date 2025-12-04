@@ -83,12 +83,12 @@
   
   .mintle-logo {
     @apply font-black;
-    color: var(--mintle-brand);
-    /* Add a subtle white stroke/glow to improve contrast */
-    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+    /* Slightly lighter brand color for better contrast */
+    color: #24335f;
+    /* Soft outer glow only, no stroke through the glyphs */
     text-shadow:
-      0 0 4px rgba(255, 255, 255, 0.25),
-      0 0 8px rgba(0, 0, 0, 0.6);
+      0 0 6px rgba(0, 0, 0, 0.8),
+      0 0 10px rgba(0, 0, 0, 0.9);
   }
 }
 
