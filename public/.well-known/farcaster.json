@@ -5,12 +5,12 @@
     "signature": ""
   },
   "baseBuilder": {
-    "ownerAddress": "" 
+    "ownerAddress": "0x995D77A17Cd205Cd127b85c199C3Ac029663Bc77" 
   },
   "miniapp": {
     "version": "1",
     "name": "MorL",
-    "homeUrl": "https://morl.vercel.app",
+    "homeUrl": "https://morless.vercel.app/",
     "iconUrl": "https://morl.vercel.app/icon.png",
     "splashImageUrl": "https://morl.vercel.app/splash.png",
     "splashBackgroundColor": "#020617",
