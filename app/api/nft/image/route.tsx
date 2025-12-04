@@ -1,5 +1,6 @@
 import { ImageResponse } from '@vercel/og'
 import { NextRequest } from 'next/server'
+import React from 'react'
 
 export const runtime = 'edge'
 
@@ -45,95 +46,103 @@ export async function GET(request: NextRequest) {
       .join('')
     
     return new ImageResponse(
-      (
-        <div
-          style={{
+      React.createElement(
+        'div',
+        {
+          style: {
             height: '100%',
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#020617', // slate-950
+            backgroundColor: '#020617',
             backgroundImage: 'linear-gradient(to bottom, #0f172a, #1e293b)',
             fontFamily: 'system-ui, -apple-system',
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
+          },
+        },
+        // Header
+        React.createElement(
+          'div',
+          {
+            style: {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               marginBottom: '40px',
-            }}
-          >
-            <div style={{ fontSize: '80px', marginBottom: '20px' }}>
-              {categoryEmoji}
-            </div>
-            <div
-              style={{
+            },
+          },
+          React.createElement('div', { style: { fontSize: '80px', marginBottom: '20px' } }, categoryEmoji),
+          React.createElement(
+            'div',
+            {
+              style: {
                 fontSize: '48px',
                 fontWeight: 'bold',
                 color: '#ffffff',
                 marginBottom: '10px',
-              }}
-            >
-              Mintle {categoryName}
-            </div>
-            <div
-              style={{
+              },
+            },
+            `Mintle ${categoryName}`
+          ),
+          React.createElement(
+            'div',
+            {
+              style: {
                 fontSize: '36px',
                 color: tierColor,
                 fontWeight: 'bold',
-              }}
-            >
-              {score}/{total} {tierEmoji} {tier}
-            </div>
-          </div>
-          
-          {/* Result Pattern */}
-          <div
-            style={{
+              },
+            },
+            `${score}/${total} ${tierEmoji} ${tier}`
+          )
+        ),
+        // Result Pattern
+        React.createElement(
+          'div',
+          {
+            style: {
               fontSize: '60px',
               marginBottom: '40px',
               letterSpacing: '10px',
-            }}
-          >
-            {resultPattern || '🔴🔴🔴🔴🔴'}
-          </div>
-          
-          {/* Stats */}
-          <div
-            style={{
+            },
+          },
+          resultPattern || '🔴🔴🔴🔴🔴'
+        ),
+        // Stats
+        React.createElement(
+          'div',
+          {
+            style: {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: '20px',
               fontSize: '32px',
               color: '#94a3b8',
-            }}
-          >
-            <div>🔥 Streak: {streak} days</div>
-            {perfect && (
-              <div style={{ color: '#FFD700', fontWeight: 'bold' }}>
-                Perfect Game! 🎉
-              </div>
-            )}
-          </div>
-          
-          {/* Footer */}
-          <div
-            style={{
+            },
+          },
+          React.createElement('div', null, `🔥 Streak: ${streak} days`),
+          perfect &&
+            React.createElement(
+              'div',
+              { style: { color: '#FFD700', fontWeight: 'bold' } },
+              'Perfect Game! 🎉'
+            )
+        ),
+        // Footer
+        React.createElement(
+          'div',
+          {
+            style: {
               position: 'absolute',
               bottom: '40px',
               fontSize: '24px',
               color: '#64748b',
-            }}
-          >
-            morless.vercel.app
-          </div>
-        </div>
+            },
+          },
+          'morless.vercel.app'
+        )
       ),
       {
         width: 1200,
