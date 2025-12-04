@@ -82,7 +82,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           
           setNftUrl(baseScanUrl)
           
-          // Share to Base with transaction hash
+          // Share to Base with transaction hash - ONLY after successful mint
           const shareUrl = mintResult.metadataUri || baseScanUrl || null
           if (shareUrl) {
             const shared = await shareToBase(gameResult, shareUrl, mintResult.txHash)
@@ -91,21 +91,23 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
               await handleShare(shareUrl, mintResult.txHash)
             }
           }
-        } else if (mintResult.metadataUri) {
-          // Metadata generated but transaction not sent
-          setMintSuccess(false)
-          setMintError(mintResult.error || 'Transaction not sent. Please connect a wallet to mint on-chain.')
-          setNftUrl(mintResult.metadataUri)
-          
-          // Still share metadata (but note it's not minted yet)
-          await shareToBase(gameResult, mintResult.metadataUri)
         } else {
-          setMintError(mintResult.error || 'Failed to mint NFT')
+          // No transaction hash - minting failed or wallet not connected
+          setMintSuccess(false)
+          const errorMsg = mintResult.error || 'Transaction not sent. Please connect a wallet to mint on-chain.'
+          setMintError(errorMsg)
+          
+          // Don't share if minting failed - show error instead
+          console.error('Minting failed:', errorMsg)
+          
+          // Only set metadata URL if we have it, but don't share
+          if (mintResult.metadataUri) {
+            setNftUrl(mintResult.metadataUri)
+          }
         }
       } else {
         setMintError(mintResult.error || 'Failed to mint NFT')
-        // Still try to share
-        await shareToBase(gameResult)
+        // Don't share if minting failed
       }
     } catch (error) {
       console.error('Mint and share error:', error)

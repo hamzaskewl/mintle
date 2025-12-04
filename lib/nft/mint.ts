@@ -33,8 +33,25 @@ export async function mintNFT(
     
     const { metadata, metadataUri, tokenId } = await metadataResponse.json()
     
-    // Get user address (optional - metadata can be generated without it)
-    const address = userAddress || await getUserAddress()
+    // Get user address - try multiple methods
+    let address = userAddress
+    
+    if (!address) {
+      // Try to get from ethereum provider first (most reliable)
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
+        try {
+          const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' })
+          address = accounts[0]
+        } catch (e) {
+          console.log('Could not get address from ethereum provider:', e)
+        }
+      }
+      
+      // Fallback to Base SDK context
+      if (!address) {
+        address = await getUserAddress()
+      }
+    }
     
     // If we have an address, prepare the mint transaction
     if (address) {
@@ -116,12 +133,15 @@ export async function mintNFT(
         try {
           const ethereum = (window as any).ethereum
           
-          // Request account access
-          const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
-          const userAddress = accounts[0]
+          // Request account access (if not already connected)
+          let userAddress = address
+          if (!userAddress) {
+            const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+            userAddress = accounts[0]
+          }
           
           if (!userAddress) {
-            throw new Error('No wallet connected')
+            throw new Error('No wallet connected. Please connect your wallet to mint.')
           }
           
           // Get the correct network
