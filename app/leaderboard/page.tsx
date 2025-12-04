@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getDailySeed } from '@/lib/game/daily-seed'
 import { useAccount } from 'wagmi'
-import { formatAddress } from '@/lib/utils/ens'
+import { formatAddress, resolveBaseName } from '@/lib/utils/ens'
 
 interface LeaderboardEntry {
   rank: number
@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   score: number
   streak: number
   date?: string
+  baseName?: string | null // Cached Base Name Service name
 }
 
 export default function LeaderboardPage() {
@@ -35,7 +36,22 @@ export default function LeaderboardPage() {
         const data = await response.json()
         
         if (data.success) {
-          setLeaderboard(data.leaderboard || [])
+          const entries = data.leaderboard || []
+          
+          // Resolve Base Name Service names for all addresses
+          const entriesWithNames = await Promise.all(
+            entries.map(async (entry: LeaderboardEntry) => {
+              try {
+                const baseName = await resolveBaseName(entry.walletAddress)
+                return { ...entry, baseName }
+              } catch (error) {
+                console.error(`Error resolving Base Name for ${entry.walletAddress}:`, error)
+                return { ...entry, baseName: null }
+              }
+            })
+          )
+          
+          setLeaderboard(entriesWithNames)
         } else {
           console.error('Failed to fetch leaderboard:', data.error)
           setLeaderboard([])
@@ -153,8 +169,8 @@ export default function LeaderboardPage() {
                     
                     {/* Address */}
                     <div className="col-span-7 flex items-center gap-2">
-                      <span className={`font-mono ${isCurrentUser ? 'text-accent-purple font-bold' : 'text-text-primary'}`}>
-                        {formatAddress(entry.walletAddress)}
+                      <span className={`${isCurrentUser ? 'text-accent-purple font-bold' : 'text-text-primary'}`}>
+                        {entry.baseName || formatAddress(entry.walletAddress)}
                       </span>
                       {isCurrentUser && (
                         <span className="text-xs bg-accent-purple/20 px-2 py-0.5 rounded text-accent-purple">
