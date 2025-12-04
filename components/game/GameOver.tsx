@@ -78,16 +78,18 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           // Wait for transaction confirmation (optional, but good UX)
           const baseScanUrl = mintResult.txHash.startsWith('0x')
             ? `https://basescan.org/tx/${mintResult.txHash}`
-            : mintResult.metadataUri
+            : mintResult.metadataUri || null
           
           setNftUrl(baseScanUrl)
           
           // Share to Base with transaction hash
-          const shareUrl = mintResult.metadataUri || baseScanUrl
-          const shared = await shareToBase(gameResult, shareUrl, mintResult.txHash)
-          if (!shared) {
-            // Fallback to regular share
-            await handleShare(shareUrl, mintResult.txHash)
+          const shareUrl = mintResult.metadataUri || baseScanUrl || null
+          if (shareUrl) {
+            const shared = await shareToBase(gameResult, shareUrl, mintResult.txHash)
+            if (!shared) {
+              // Fallback to regular share
+              await handleShare(shareUrl, mintResult.txHash)
+            }
           }
         } else if (mintResult.metadataUri) {
           // Metadata generated but transaction not sent
