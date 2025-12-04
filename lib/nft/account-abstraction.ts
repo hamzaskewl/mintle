@@ -69,7 +69,7 @@ export function prepareUserOperation(
   sender: Address,
   contractAddress: Address,
   tokenURI: string,
-  nonce: bigint = 0n
+  nonce: bigint = BigInt(0)
 ): Partial<UserOperation> {
   // Encode the mint function call
   const callData = encodeFunctionData({

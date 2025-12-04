@@ -79,7 +79,7 @@ export async function mintNFT(
         address as Address,
         contractAddress as Address,
         metadataUri,
-        0n
+        BigInt(0)
       )
       
       // Get paymaster sponsorship for gasless transaction
