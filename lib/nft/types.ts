@@ -28,6 +28,7 @@ export interface MintNFTResponse {
   txHash?: string
   metadataUri?: string
   error?: string
+  details?: string
   paymasterSponsored?: boolean
   userOperation?: any // User operation for account abstraction
   txData?: {
