@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { mintNFT, shareToBase } from '@/lib/nft/mint'
 import { GameResultNFT } from '@/lib/nft/types'
 import { useAccount } from 'wagmi'
+import { sdk } from '@farcaster/miniapp-sdk'
 
 interface GameOverProps {
   score: number
@@ -125,15 +126,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           
           setNftUrl(nftPageUrl || baseScanUrl)
           
-          // Share to Base with transaction hash - ONLY after successful mint
-          const shareUrl = mintResult.metadataUri || baseScanUrl || null
-          if (shareUrl) {
-            const shared = await shareToBase(gameResult, shareUrl, mintResult.txHash)
-            if (!shared) {
-              // Fallback to regular share
-              await handleShare(shareUrl, mintResult.txHash)
-            }
-          }
+          // Don't auto-share - let user click the separate "Share on Farcaster" button
         } else {
           // No transaction hash - minting failed or wallet not connected
           setMintSuccess(false)
@@ -174,6 +167,45 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
     } else {
       await navigator.clipboard.writeText(shareTextWithNFT)
       alert('Results copied to clipboard!')
+    }
+  }
+  
+  const handleShareToFarcaster = async () => {
+    try {
+      // Generate OG image URL
+      const resultPattern = results
+        .map(r => r === 'correct' ? '1' : '0')
+        .join('')
+      
+      const ogImageUrl = `${window.location.origin}/api/og?category=${category}&score=${score}&total=${total}&streak=${streak.current}&perfect=${isPerfect}&pattern=${resultPattern}`
+      
+      // Format date nicely
+      const today = new Date()
+      const dateStr = today.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })
+      
+      // Create share message
+      const categoryName = category === 'movies' ? 'Movies' : 'Spotify'
+      const categoryEmoji = category === 'movies' ? '🎬' : '🎵'
+      const shareMessage = `I scored ${score}/${total} on Mintle ${categoryName} today (${dateStr})! ${categoryEmoji}\n\nPlay: https://morless.vercel.app`
+      
+      // Use Base SDK to open Farcaster compose with OG image embed
+      if (typeof window !== 'undefined' && sdk) {
+        // Warpcast compose URL with embeds
+        const composeUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareMessage)}&embeds[]=${encodeURIComponent(ogImageUrl)}`
+        
+        await sdk.actions.openUrl(composeUrl)
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(`${shareMessage}\n\n${ogImageUrl}`)
+        alert('Share text copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing to Farcaster:', error)
+      alert('Failed to share. Please try again.')
     }
   }
   
@@ -290,10 +322,21 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
               </>
             ) : (
               <>
-                🎨 Mint NFT & Share
+                🎨 Mint NFT
               </>
             )}
           </Button>
+          
+          {/* Show Share on Farcaster button only after successful mint */}
+          {mintSuccess && (
+            <Button
+              variant="primary"
+              className="w-full py-3 bg-accent-blue hover:bg-accent-blue/80"
+              onClick={handleShareToFarcaster}
+            >
+              📱 Share on Farcaster
+            </Button>
+          )}
           
           <div className="flex gap-2">
             <Button
