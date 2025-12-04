@@ -228,65 +228,65 @@ export default function MoviesGame() {
   const nextItem = game.items[currentRound + 1]
   
   return (
-    <div className="min-h-screen flex flex-col p-6">
+    <div className="min-h-screen flex flex-col p-3 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col items-center mb-8 gap-4">
+      <div className="flex flex-col items-center mb-4 sm:mb-8 gap-2 sm:gap-4">
         <div className="flex items-center justify-between w-full">
           <Link href="/">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-4 py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200 shadow-lg"
+              className="px-2 sm:px-4 py-1.5 sm:py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200 shadow-lg text-sm sm:text-base"
             >
               Back
             </motion.div>
           </Link>
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-purple">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-purple">
             MorL
           </h1>
-          <div className="w-20" /> {/* Spacer */}
+          <div className="w-12 sm:w-20" /> {/* Spacer */}
         </div>
         
         {/* Game mode switcher */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link href="/play/spotify">
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-4 py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200"
+              className="px-2 sm:px-4 py-1.5 sm:py-2 bg-bg-card/60 hover:bg-bg-card backdrop-blur-sm border border-white/10 rounded-full text-text-secondary hover:text-text-primary transition-all duration-200 text-sm sm:text-base"
             >
-              <span className="text-xl mr-2">🎵</span>
+              <span className="text-base sm:text-xl mr-1 sm:mr-2">🎵</span>
               <span className="font-semibold">Spotify</span>
             </motion.div>
           </Link>
           <motion.div
             whileHover={{ scale: 1.02 }}
-            className="px-4 py-2 bg-accent-cyan/20 border-2 border-accent-cyan rounded-full"
+            className="px-2 sm:px-4 py-1.5 sm:py-2 bg-accent-cyan/20 border-2 border-accent-cyan rounded-full text-sm sm:text-base"
           >
-            <span className="text-xl mr-2">🎬</span>
+            <span className="text-base sm:text-xl mr-1 sm:mr-2">🎬</span>
             <span className="font-semibold text-accent-cyan">Movies</span>
           </motion.div>
         </div>
       </div>
       
       {/* Game area */}
-      <div className="flex-1 flex items-center justify-center py-4">
-        <div className="w-full max-w-5xl px-4 space-y-4">
+      <div className="flex-1 flex items-center justify-center py-2 sm:py-4">
+        <div className="w-full max-w-5xl px-2 sm:px-4 space-y-2 sm:space-y-4">
           {/* Question text */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h2 className="text-2xl lg:text-4xl font-bold text-text-primary">
+            <h2 className="text-lg sm:text-2xl lg:text-4xl font-bold text-text-primary px-2">
               Which has a <span className="text-accent-cyan">higher</span> IMDB rating?
             </h2>
           </motion.div>
           
           {/* Cards Container */}
-          <div className="relative flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-8">
+          <div className="relative flex flex-row items-center justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 w-full">
             {/* Left card - STATIC, shows value only after first round */}
-            <div className="w-full max-w-[336px] flex-shrink-0">
+            <div className="flex-1 max-w-[160px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[336px] flex-shrink-0">
               <button
                 onClick={() => handleCardClick('left')}
                 disabled={isRevealing}
@@ -322,7 +322,7 @@ export default function MoviesGame() {
                     duration: 0.8
                   }
                 }}
-                className="w-full max-w-[336px] flex-shrink-0 relative z-10"
+                className="flex-1 max-w-[160px] sm:max-w-[200px] md:max-w-[280px] lg:max-w-[336px] flex-shrink-0 relative z-10"
               >
                 <button
                   onClick={() => handleCardClick('right')}

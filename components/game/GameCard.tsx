@@ -105,8 +105,8 @@ export function GameCard({
         )}
         
         {/* Text overlay at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-          <h3 className="text-2xl font-bold text-white drop-shadow-lg">{name}</h3>
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 space-y-1 sm:space-y-2">
+          <h3 className="text-sm sm:text-lg md:text-2xl font-bold text-white drop-shadow-lg line-clamp-2">{name}</h3>
           
           {/* Value display */}
           <AnimatePresence mode="wait">
@@ -116,14 +116,14 @@ export function GameCard({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="space-y-1"
+                className="space-y-0.5 sm:space-y-1"
               >
-                <div className="text-xs text-white/80 uppercase tracking-wide">
+                <div className="text-[10px] sm:text-xs text-white/80 uppercase tracking-wide">
                   {category === 'movies' ? 'IMDB Rating' : 'Monthly Listeners'}
                 </div>
                 <div className={cn(
                   "font-mono font-bold text-white drop-shadow-lg",
-                  category === 'spotify' ? 'text-2xl' : 'text-4xl'
+                  category === 'spotify' ? 'text-sm sm:text-xl md:text-2xl' : 'text-xl sm:text-3xl md:text-4xl'
                 )}>
                   {(isWrong || disableAnimation) ? formatValue(value, category) : formatValue(startAnimation ? animatedValue : value, category)}
                 </div>
@@ -134,12 +134,12 @@ export function GameCard({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-start gap-1"
+                className="flex flex-col items-start gap-0.5 sm:gap-1"
               >
-                <div className="text-xs text-white/60 uppercase tracking-wide">
+                <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">
                   {category === 'movies' ? 'IMDB Rating' : 'Monthly Listeners'}
                 </div>
-                <div className="text-5xl opacity-60">❓</div>
+                <div className="text-3xl sm:text-4xl md:text-5xl opacity-60">❓</div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -16,6 +16,12 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'MorL - Daily More or Less',
   description: 'Guess higher or lower in this daily challenge game',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   openGraph: {
     title: 'MorL - Daily More or Less',
     description: 'Guess higher or lower in this daily challenge game',
