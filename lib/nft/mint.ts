@@ -41,22 +41,36 @@ export async function mintNFT(
       // Detect environment: Use testnet for web/testing, mainnet for Base Mini App
       // Base Mini App typically runs on mainnet, but we can test on Sepolia in web preview
       let isInBaseApp = false
+      let currentNetwork: string | null = null
+      
       try {
         if (typeof window !== 'undefined' && sdk) {
           const context = await sdk.context
           isInBaseApp = context !== null && context !== undefined
+        }
+        
+        // Check current network from ethereum provider
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
+          const chainId = await (window as any).ethereum.request({ method: 'eth_chainId' })
+          currentNetwork = chainId
         }
       } catch (e) {
         // Not in Base app context
         isInBaseApp = false
       }
       
-      // Use testnet if: explicitly set via env, or we're in web (not Base app), or for testing
-      // Base Sepolia has UNLIMITED paymaster sponsorship for testing!
-      // Default to testnet for now until mainnet contract is deployed
+      // Determine network: 
+      // - If user is on Base Mainnet (0x2105), use mainnet contract (when deployed)
+      // - Otherwise, default to Sepolia testnet
+      // - Can override with env variable
+      const isOnMainnet = currentNetwork === '0x2105' || currentNetwork === '8453'
       const isTestnet = process.env.NEXT_PUBLIC_USE_TESTNET === 'true' || 
-                       !isInBaseApp ||
-                       true // Default to testnet - Sepolia has unlimited paymaster credits!
+                       (!isOnMainnet && process.env.NEXT_PUBLIC_USE_TESTNET !== 'false') ||
+                       true // Default to testnet until mainnet contract is deployed
+      
+      if (isOnMainnet && isTestnet) {
+        console.warn('⚠️ User is on Base Mainnet but contract is on Sepolia. Deploy contract to mainnet or switch to Sepolia.')
+      }
       
       console.log('Minting environment:', { isInBaseApp, isTestnet, address })
       
@@ -96,84 +110,135 @@ export async function mintNFT(
         console.warn('⚠️ Paymaster sponsorship not available - user will pay gas')
       }
       
-      // Check if we're in Base Mini App context
-      if (typeof window !== 'undefined' && sdk) {
+      // Try to send transaction directly using ethereum provider
+      // This will work in Base Mini App or any wallet context
+      if (typeof window !== 'undefined' && (window as any).ethereum) {
         try {
-          // If we're in Base Mini App but using testnet, show a message
-          if (isInBaseApp && isTestnet) {
-            console.warn('Base Mini App detected but using testnet. Base Mini App typically uses mainnet.')
+          const ethereum = (window as any).ethereum
+          
+          // Request account access
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+          const userAddress = accounts[0]
+          
+          if (!userAddress) {
+            throw new Error('No wallet connected')
           }
           
-          // Base SDK doesn't have sendTransaction method yet
-          // So we'll prepare the user operation and attempt to send via bundler
-          // Note: In production, you'd need to:
-          // 1. Get actual nonce from the smart contract wallet
-          // 2. Estimate gas properly
-          // 3. Get user signature
+          // Get the correct network
+          const networkId = await ethereum.request({ method: 'eth_chainId' })
+          const expectedChainId = isTestnet ? '0x14a34' : '0x2105' // Base Sepolia or Base Mainnet
           
-          // Complete user operation with required fields
-          const completeUserOp = {
-            ...userOp,
-            maxFeePerGas: '0x0' as any, // Will be set by paymaster
-            maxPriorityFeePerGas: '0x0' as any, // Will be set by paymaster
-          }
-          
-          // Attempt to send via bundler
-          // The bundler will need the user to sign it first
-          let txHash: string | undefined
-          const bundlerResult = await sendUserOperation(completeUserOp as any, chainId)
-          
-          if (bundlerResult?.userOpHash) {
-            txHash = bundlerResult.userOpHash
-            console.log('✅ Transaction sent via bundler:', txHash)
-          }
-          
-          if (txHash) {
-            // Transaction sent successfully
-            const baseScanUrl = isTestnet
-              ? `https://sepolia.basescan.org/tx/${txHash}`
-              : `https://basescan.org/tx/${txHash}`
-            
-            console.log('🎉 NFT minted! View on BaseScan:', baseScanUrl)
-            
-            return {
-              success: true,
-              metadataUri,
-              tokenId,
-              txHash,
-              paymasterSponsored: !!paymasterData,
+          if (networkId !== expectedChainId) {
+            // Try to switch network
+            try {
+              await ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: expectedChainId }],
+              })
+            } catch (switchError: any) {
+              // If network doesn't exist, add it
+              if (switchError.code === 4902) {
+                const chainConfig = isTestnet ? {
+                  chainId: '0x14a34',
+                  chainName: 'Base Sepolia',
+                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: ['https://sepolia.base.org'],
+                  blockExplorerUrls: ['https://sepolia-explorer.base.org']
+                } : {
+                  chainId: '0x2105',
+                  chainName: 'Base',
+                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: ['https://mainnet.base.org'],
+                  blockExplorerUrls: ['https://basescan.org']
+                }
+                
+                await ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [chainConfig],
+                })
+              } else {
+                throw switchError
+              }
             }
           }
           
-          // Transaction prepared but not sent yet
-          // This happens when:
-          // 1. Base SDK doesn't have sendTransaction method yet
-          // 2. Bundler requires user signature first
-          // 3. Nonce/gas estimation needed
+          // Estimate gas
+          const gasEstimate = await ethereum.request({
+            method: 'eth_estimateGas',
+            params: [{
+              from: userAddress,
+              to: contractAddress,
+              data: data,
+            }]
+          })
           
-          console.log('📝 Transaction prepared with paymaster sponsorship')
-          console.log('User operation ready:', userOp)
+          // Send transaction
+          const txHash = await ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+              from: userAddress,
+              to: contractAddress,
+              data: data,
+              value: '0x0',
+              gas: gasEstimate,
+            }]
+          })
+          
+          console.log('✅ Transaction sent! Hash:', txHash)
+          
+          const baseScanUrl = isTestnet
+            ? `https://sepolia.basescan.org/tx/${txHash}`
+            : `https://basescan.org/tx/${txHash}`
+          
+          console.log('🎉 NFT minted! View on BaseScan:', baseScanUrl)
           
           return {
             success: true,
             metadataUri,
             tokenId,
+            txHash,
             paymasterSponsored: !!paymasterData,
-            userOperation: userOp, // Return user op for manual sending if needed
-            // Note: Transaction needs to be signed and sent
-            // Base SDK or bundler integration required for full automation
           }
-        } catch (sdkError) {
-          console.error('Base SDK error:', sdkError)
-          // Fallback: return metadata for manual minting
+        } catch (txError: any) {
+          console.error('Transaction error:', txError)
+          
+          // If user rejected, don't show error
+          if (txError.code === 4001 || txError.message?.includes('User rejected')) {
+            return {
+              success: false,
+              error: 'Transaction cancelled by user',
+              metadataUri,
+              tokenId,
+            }
+          }
+          
+          // Otherwise, return metadata but note transaction failed
           return {
             success: true,
             metadataUri,
             tokenId,
             paymasterSponsored: !!paymasterData,
-            error: 'Transaction preparation complete. Ready for manual minting or Base SDK integration.'
+            error: `Transaction failed: ${txError.message}. Metadata generated successfully.`,
           }
         }
+      }
+      
+      // Fallback: If no ethereum provider, return metadata
+      // User can manually mint later
+      console.warn('⚠️ No ethereum provider found. Metadata generated but transaction not sent.')
+      console.log('Transaction data:', { to: contractAddress, data, value: '0' })
+      
+      return {
+        success: true,
+        metadataUri,
+        tokenId,
+        paymasterSponsored: !!paymasterData,
+        txData: {
+          to: contractAddress,
+          data: data as `0x${string}`,
+          value: '0'
+        },
+        error: 'No wallet connected. Please connect a wallet to mint on-chain.'
       }
       
       // Fallback: return metadata with transaction data for manual minting
@@ -246,7 +311,8 @@ async function getUserAddress(): Promise<string | undefined> {
  */
 export async function shareToBase(
   gameResult: GameResultNFT,
-  nftUrl?: string
+  nftUrl?: string,
+  txHash?: string
 ): Promise<boolean> {
   try {
     const categoryEmoji = gameResult.category === 'movies' ? '🎬' : '🎵'
@@ -254,11 +320,17 @@ export async function shareToBase(
       .map(r => r === 'correct' ? '🟢' : '🔴')
       .join('')
     
+    const nftText = txHash 
+      ? `🎉 NFT Minted on-chain!\nView: ${nftUrl}\n\n`
+      : nftUrl 
+        ? `NFT Metadata: ${nftUrl}\n\n`
+        : ''
+    
     const shareText = `${categoryEmoji} Mintle ${gameResult.category === 'movies' ? 'Movies' : 'Spotify'}\n\n` +
       `Score: ${gameResult.score}/${gameResult.total}\n` +
       `${resultPattern}\n` +
       `Streak: ${gameResult.streak} days 🔥\n\n` +
-      (nftUrl ? `Minted NFT: ${nftUrl}\n\n` : '') +
+      nftText +
       `Play: https://morless.vercel.app`
     
     if (typeof window !== 'undefined' && sdk) {
