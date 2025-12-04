@@ -22,12 +22,14 @@ export async function POST(request: Request) {
       userAddress 
     } = body
     
-    if (!category || score === undefined || !results || !userAddress) {
+    if (!category || score === undefined || !results) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
+    
+    // userAddress is optional - metadata can be generated without it
     
     const gameResult: GameResultNFT = {
       category,

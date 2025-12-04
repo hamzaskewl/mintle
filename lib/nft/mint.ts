@@ -30,74 +30,79 @@ export async function mintNFT(
     
     const { metadata, metadataUri, tokenId } = await metadataResponse.json()
     
-    // Get user address
+    // Get user address (optional - metadata can be generated without it)
     const address = userAddress || await getUserAddress()
-    if (!address) {
+    
+    // If we have an address, prepare the mint transaction
+    if (address) {
+      // Prepare mint transaction
+      const isTestnet = true // Set to false for mainnet
+      const contractAddress = getContractAddress(isTestnet)
+      const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
+      
+      // Encode the function call
+      const data = encodeFunctionData({
+        abi: NFT_ABI,
+        functionName: 'safeMint',
+        args: [address as `0x${string}`, metadataUri]
+      })
+      
+      // Check if we're in Base Mini App context
+      if (typeof window !== 'undefined' && sdk) {
+        try {
+          // For now, we'll construct a transaction URL
+          // In production, you'd use Base SDK's transaction methods
+          // or a wallet connector to send the transaction
+          
+          // Create a link to view the contract on BaseScan
+          const baseScanUrl = isTestnet 
+            ? `https://sepolia.basescan.org/address/${contractAddress}`
+            : `https://basescan.org/address/${contractAddress}`
+          
+          // Open contract page (user can mint manually for now)
+          // TODO: Implement actual transaction sending via Base SDK or wallet
+          await sdk.actions.openUrl(baseScanUrl)
+          
+          return {
+            success: true,
+            metadataUri,
+            tokenId,
+            // Note: Actual transaction hash will come from the mint transaction
+            // For now, return the metadata URI as the identifier
+          }
+        } catch (sdkError) {
+          console.error('Base SDK error:', sdkError)
+          // Fallback: return metadata for manual minting
+          return {
+            success: true,
+            metadataUri,
+            tokenId,
+            error: 'Automatic minting not available. Metadata ready for manual minting.'
+          }
+        }
+      }
+      
+      // Fallback: return metadata with transaction data for manual minting
       return {
-        success: false,
-        error: 'User address not available',
-        metadataUri
-      }
-    }
-    
-    // Prepare mint transaction
-    const isTestnet = true // Set to false for mainnet
-    const contractAddress = getContractAddress(isTestnet)
-    const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
-    
-    // Encode the function call
-    const data = encodeFunctionData({
-      abi: NFT_ABI,
-      functionName: 'safeMint',
-      args: [address as `0x${string}`, metadataUri]
-    })
-    
-    // Check if we're in Base Mini App context
-    if (typeof window !== 'undefined' && sdk) {
-      try {
-        // For now, we'll construct a transaction URL
-        // In production, you'd use Base SDK's transaction methods
-        // or a wallet connector to send the transaction
-        
-        // Create a link to view the contract on BaseScan
-        const baseScanUrl = isTestnet 
-          ? `https://sepolia.basescan.org/address/${contractAddress}`
-          : `https://basescan.org/address/${contractAddress}`
-        
-        // Open contract page (user can mint manually for now)
-        // TODO: Implement actual transaction sending via Base SDK or wallet
-        await sdk.actions.openUrl(baseScanUrl)
-        
-        return {
-          success: true,
-          metadataUri,
-          tokenId,
-          // Note: Actual transaction hash will come from the mint transaction
-          // For now, return the metadata URI as the identifier
-        }
-      } catch (sdkError) {
-        console.error('Base SDK error:', sdkError)
-        // Fallback: return metadata for manual minting
-        return {
-          success: true,
-          metadataUri,
-          tokenId,
-          error: 'Automatic minting not available. Metadata ready for manual minting.'
+        success: true,
+        metadataUri,
+        tokenId,
+        // Transaction data for manual minting
+        txData: {
+          to: contractAddress,
+          data,
+          value: '0'
         }
       }
     }
     
-    // Fallback: return metadata for manual minting or sharing
+    // No address available - still return success with metadata for sharing
+    // User can share their result even without minting
     return {
       success: true,
       metadataUri,
       tokenId,
-      // Transaction data for manual minting
-      txData: {
-        to: contractAddress,
-        data,
-        value: '0'
-      }
+      error: 'User address not available. Metadata generated - you can share your result!'
     }
     
   } catch (error) {
@@ -111,17 +116,30 @@ export async function mintNFT(
 
 /**
  * Get user address from Base Mini App SDK
+ * Attempts to extract address from SDK context
  */
 async function getUserAddress(): Promise<string | undefined> {
   try {
     if (typeof window !== 'undefined' && sdk) {
-      // Base SDK context should provide user address
-      // This is a placeholder - actual implementation depends on SDK version
-      // TODO: Update based on actual Base SDK API when available
       const context = await sdk.context
-      // The actual property path may vary - check Base SDK docs
-      // For now, return undefined and let the caller provide the address
-      return undefined
+      
+      // Try different possible property paths based on Base SDK structure
+      // The actual structure may vary - check Base SDK documentation
+      if (context) {
+        // Try common property paths
+        const possiblePaths = [
+          (context as any).user?.address,
+          (context as any).address,
+          (context as any).wallet?.address,
+          (context as any).account?.address,
+        ]
+        
+        for (const address of possiblePaths) {
+          if (address && typeof address === 'string' && address.startsWith('0x')) {
+            return address
+          }
+        }
+      }
     }
   } catch (error) {
     console.error('Error getting user address:', error)
