@@ -84,6 +84,11 @@
   .mintle-logo {
     @apply font-black;
     color: var(--mintle-brand);
+    /* Add a subtle white stroke/glow to improve contrast */
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
+    text-shadow:
+      0 0 4px rgba(255, 255, 255, 0.25),
+      0 0 8px rgba(0, 0, 0, 0.6);
   }
 }
 
