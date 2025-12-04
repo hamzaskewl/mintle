@@ -28,5 +28,10 @@ export interface MintNFTResponse {
   txHash?: string
   metadataUri?: string
   error?: string
+  txData?: {
+    to: string
+    data: `0x${string}`
+    value: string
+  }
 }
 
