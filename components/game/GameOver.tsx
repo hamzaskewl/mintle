@@ -88,11 +88,18 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           setMintSuccess(true)
           
           // Wait for transaction confirmation (optional, but good UX)
+          // Use Sepolia explorer since contract is on Sepolia
           const baseScanUrl = mintResult.txHash.startsWith('0x')
-            ? `https://basescan.org/tx/${mintResult.txHash}`
+            ? `https://sepolia.basescan.org/tx/${mintResult.txHash}`
             : mintResult.metadataUri || null
           
-          setNftUrl(baseScanUrl)
+          // Create NFT page URL (token view on BaseScan Sepolia)
+          const contractAddress = '0x35fd374892Eb1Aa77260549e5914c41FAA1f0B2d' // Sepolia contract
+          const nftPageUrl = mintResult.tokenId
+            ? `https://sepolia.basescan.org/token/${contractAddress}?a=${mintResult.tokenId}`
+            : baseScanUrl
+          
+          setNftUrl(nftPageUrl || baseScanUrl)
           
           // Share to Base with transaction hash - ONLY after successful mint
           const shareUrl = mintResult.metadataUri || baseScanUrl || null

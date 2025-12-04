@@ -191,8 +191,8 @@ export async function mintNFT(
         // The actual transaction hash will be available after confirmation
         
         const baseScanUrl = isTestnet
-          ? `https://sepolia.basescan.org`
-          : `https://basescan.org`
+          ? `https://sepolia.basescan.org/tx/${txId}`
+          : `https://basescan.org/tx/${txId}`
         
         console.log('🎉 NFT mint initiated! Transaction ID:', txId)
         console.log('View on BaseScan:', baseScanUrl)
