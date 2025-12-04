@@ -104,55 +104,28 @@ export async function mintNFT(
             console.warn('Base Mini App detected but using testnet. Base Mini App typically uses mainnet.')
           }
           
-          // Try Base SDK sendTransaction method (if available)
-          // Base SDK might handle account abstraction internally
-          let txHash: string | undefined
+          // Base SDK doesn't have sendTransaction method yet
+          // So we'll prepare the user operation and attempt to send via bundler
+          // Note: In production, you'd need to:
+          // 1. Get actual nonce from the smart contract wallet
+          // 2. Estimate gas properly
+          // 3. Get user signature
           
-          try {
-            // Check if Base SDK has sendTransaction method
-            if (sdk.actions && typeof sdk.actions.sendTransaction === 'function') {
-              // Use Base SDK's transaction method
-              // This should handle account abstraction and signing
-              const txResult = await sdk.actions.sendTransaction({
-                to: contractAddress,
-                data: data as `0x${string}`,
-                value: '0',
-                // Paymaster data if available
-                ...(paymasterData && {
-                  paymasterAndData: paymasterData.paymasterAndData
-                })
-              })
-              
-              txHash = txResult
-              console.log('✅ Transaction sent via Base SDK:', txHash)
-            }
-          } catch (sdkTxError) {
-            console.log('Base SDK sendTransaction not available, trying bundler:', sdkTxError)
+          // Complete user operation with required fields
+          const completeUserOp = {
+            ...userOp,
+            maxFeePerGas: '0x0' as any, // Will be set by paymaster
+            maxPriorityFeePerGas: '0x0' as any, // Will be set by paymaster
           }
           
-          // If Base SDK didn't send, try bundler
-          if (!txHash) {
-            // Complete user operation with required fields
-            // Note: In production, you'd need to:
-            // 1. Get actual nonce from the smart contract wallet
-            // 2. Estimate gas properly
-            // 3. Get user signature
-            
-            // For now, we'll prepare the user operation
-            // The bundler will need the user to sign it first
-            const completeUserOp = {
-              ...userOp,
-              maxFeePerGas: '0x0' as any, // Will be set by paymaster
-              maxPriorityFeePerGas: '0x0' as any, // Will be set by paymaster
-            }
-            
-            // Attempt to send via bundler
-            const bundlerResult = await sendUserOperation(completeUserOp as any, chainId)
-            
-            if (bundlerResult?.userOpHash) {
-              txHash = bundlerResult.userOpHash
-              console.log('✅ Transaction sent via bundler:', txHash)
-            }
+          // Attempt to send via bundler
+          // The bundler will need the user to sign it first
+          let txHash: string | undefined
+          const bundlerResult = await sendUserOperation(completeUserOp as any, chainId)
+          
+          if (bundlerResult?.userOpHash) {
+            txHash = bundlerResult.userOpHash
+            console.log('✅ Transaction sent via bundler:', txHash)
           }
           
           if (txHash) {
