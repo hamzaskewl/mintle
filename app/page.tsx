@@ -53,8 +53,8 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-2"
         >
-          <h1 className="text-5xl font-bold">
-            <span className="bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-purple bg-clip-text text-transparent">
+          <h1 className="text-5xl">
+            <span className="mintle-logo">
               Mintle
             </span>
           </h1>

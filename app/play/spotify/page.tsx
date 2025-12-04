@@ -241,8 +241,8 @@ export default function SpotifyGame() {
               Back
             </motion.div>
           </Link>
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-success via-accent-cyan to-accent-blue">
-            Mintle
+          <h1 className="text-2xl sm:text-4xl md:text-5xl">
+            <span className="mintle-logo">Mintle</span>
           </h1>
           <div className="w-12 sm:w-20" /> {/* Spacer */}
         </div>
