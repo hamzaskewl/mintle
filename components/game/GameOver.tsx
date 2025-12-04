@@ -162,7 +162,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
       await navigator.share({
         title: 'Mintle - Daily More or Less',
         text: shareTextWithNFT,
-        url: nftUrl || 'https://morless.vercel.app'
+        url: nftUrl || 'https://mintle.vercel.app'
       })
     } else {
       await navigator.clipboard.writeText(shareTextWithNFT)
@@ -190,7 +190,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
       // Create share message
       const categoryName = category === 'movies' ? 'Movies' : 'Spotify'
       const categoryEmoji = category === 'movies' ? '🎬' : '🎵'
-      const shareMessage = `I scored ${score}/${total} on Mintle ${categoryName} today (${dateStr})! ${categoryEmoji}\n\nPlay: https://morless.vercel.app`
+      const shareMessage = `I scored ${score}/${total} on Mintle ${categoryName} today (${dateStr})! ${categoryEmoji}\n\nPlay: https://mintle.vercel.app`
       
       // Use Base SDK to open Farcaster compose with OG image embed
       if (typeof window !== 'undefined' && sdk) {

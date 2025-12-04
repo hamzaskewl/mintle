@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
               color: '#64748b',
             },
           },
-          'morless.vercel.app'
+          'mintle.vercel.app'
         )
       ),
       {

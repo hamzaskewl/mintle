@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     
     // Generate a unique token ID
     const tokenId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const metadataUri = `https://morless.vercel.app/api/nft/metadata/${tokenId}`
+    const metadataUri = `https://mintle.vercel.app/api/nft/metadata/${tokenId}`
     
     // STEP 4: Sign the mint message
     const privateKey = process.env.NFT_SIGNER_PRIVATE_KEY

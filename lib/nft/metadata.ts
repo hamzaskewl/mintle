@@ -40,7 +40,7 @@ export function generateNFTMetadata(
     name,
     description,
     image: imageUrl,
-    external_url: `https://morless.vercel.app`,
+    external_url: `https://mintle.vercel.app`,
     attributes: [
       {
         trait_type: 'Category',
@@ -95,6 +95,6 @@ export function generateNFTImageUrl(gameResult: GameResultNFT): string {
   })
   
   // This will be an API route that generates the image
-  return `https://morless.vercel.app/api/nft/image?${params.toString()}`
+  return `https://mintle.vercel.app/api/nft/image?${params.toString()}`
 }
 

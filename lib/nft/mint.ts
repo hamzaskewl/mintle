@@ -368,7 +368,7 @@ export async function shareToBase(
       `${resultPattern}\n` +
       `Streak: ${gameResult.streak} days 🔥\n\n` +
       nftText +
-      `Play: https://morless.vercel.app`
+      `Play: https://mintle.vercel.app`
     
     if (typeof window !== 'undefined' && sdk) {
       // Use Base SDK to share
@@ -389,7 +389,7 @@ export async function shareToBase(
       await navigator.share({
         title: 'Mintle Game Result',
         text: shareText,
-        url: nftUrl || 'https://morless.vercel.app'
+        url: nftUrl || 'https://mintle.vercel.app'
       })
       return true
     }

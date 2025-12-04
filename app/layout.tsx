@@ -31,13 +31,13 @@ export const metadata: Metadata = {
   other: {
     'fc:miniapp': JSON.stringify({
       version: 'next',
-      imageUrl: 'https://morless.vercel.app/og.png',
+      imageUrl: 'https://mintle.vercel.app/og.png',
       button: {
         title: 'Play Mintle',
         action: {
           type: 'launch_miniapp',
           name: 'Mintle',
-          url: 'https://morless.vercel.app'
+          url: 'https://mintle.vercel.app'
         }
       }
     })

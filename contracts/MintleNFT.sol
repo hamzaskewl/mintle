@@ -34,7 +34,7 @@ contract MintleNFT is ERC721, Ownable {
     event SignerUpdated(address indexed oldSigner, address indexed newSigner);
 
     constructor(address initialOwner, address _signer) ERC721("Mintle Game Results", "MINTLE") Ownable(initialOwner) {
-        _baseTokenURI = "https://morless.vercel.app/api/nft/metadata/";
+        _baseTokenURI = "https://mintle.vercel.app/api/nft/metadata/";
         signer = _signer;
         
         // Build domain separator

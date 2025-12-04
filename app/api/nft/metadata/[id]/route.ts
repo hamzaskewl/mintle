@@ -40,8 +40,8 @@ export async function GET(
     return NextResponse.json({
       name: `Mintle Game Result #${tokenId}`,
       description: 'Daily Mintle Challenge Game Result NFT',
-      image: `https://morless.vercel.app/api/nft/image?tokenId=${tokenId}`,
-      external_url: 'https://morless.vercel.app',
+      image: `https://mintle.vercel.app/api/nft/image?tokenId=${tokenId}`,
+      external_url: 'https://mintle.vercel.app',
       attributes: [
         {
           trait_type: 'Token ID',
