@@ -24,13 +24,13 @@ export const metadata: Metadata = {
   other: {
     'fc:miniapp': JSON.stringify({
       version: 'next',
-      imageUrl: 'https://morl.vercel.app/og.png', // Update with your actual domain/image
+      imageUrl: 'https://morless.vercel.app/og.png',
       button: {
         title: 'Play MorL',
         action: {
           type: 'launch_miniapp',
           name: 'MorL',
-          url: 'https://morl.vercel.app' // Update with your actual domain
+          url: 'https://morless.vercel.app'
         }
       }
     })
