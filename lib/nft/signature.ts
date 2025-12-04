@@ -1,6 +1,3 @@
-import { 
-  signTypedData
-} from 'viem'
 import { privateKeyToAccount, privateKeyToAddress } from 'viem/accounts'
 
 /**
@@ -62,9 +59,8 @@ export async function signMintMessage(
     date: date
   }
   
-  // Sign the typed data
-  const signature = await signTypedData({
-    account,
+  // Sign the typed data using the account's signTypedData method
+  const signature = await account.signTypedData({
     domain,
     types,
     primaryType: 'MintMessage',
