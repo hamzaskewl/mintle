@@ -83,8 +83,8 @@
   
   .mintle-logo {
     @apply font-black;
-    /* Slightly lighter brand color for better contrast */
-    color: #24335f;
+    /* Brand color: light but not too bright blue for good contrast */
+    color: #3b82f6;
     /* Soft outer glow only, no stroke through the glyphs */
     text-shadow:
       0 0 6px rgba(0, 0, 0, 0.8),
