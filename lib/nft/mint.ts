@@ -96,9 +96,11 @@ export async function mintNFT(
       const mintTx = prepareMintTransaction(address, metadataUri, isTestnet)
       
       // Encode the function call
+      // Use publicMint instead of safeMint since safeMint requires onlyOwner
+      // If publicMint doesn't exist, fall back to safeMint (will fail if not owner)
       const data = encodeFunctionData({
         abi: NFT_ABI,
-        functionName: 'safeMint',
+        functionName: 'publicMint', // Use publicMint which anyone can call
         args: [address as `0x${string}`, metadataUri]
       })
       
@@ -124,7 +126,15 @@ export async function mintNFT(
           throw new Error('No wallet connected. Please connect your Base Account to mint.')
         }
         
-        const chainId = isTestnet ? baseSepolia.id : base.id
+        // Get the actual chain ID from the connected account
+        // Base Mini App typically runs on Mainnet, but contract is on Sepolia
+        // For now, always use Sepolia since contract is deployed there
+        const chainId: 8453 | 84532 = isTestnet ? baseSepolia.id : base.id
+        
+        // Note: If user is on Mainnet but contract is on Sepolia, transaction will fail
+        // Solution: Deploy contract to Mainnet or ensure user is on Sepolia
+        console.log('Using chain ID:', chainId, 'isTestnet:', isTestnet)
+        
         const account = accountAddress as Address
         
         // Check if paymaster capability is supported

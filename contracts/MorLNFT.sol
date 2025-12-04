@@ -22,6 +22,15 @@ contract MintleNFT is ERC721, Ownable {
         return tokenId;
     }
 
+    // Public mint function that anyone can call (for users to mint their own NFTs)
+    function publicMint(address to, string memory uri) public returns (uint256) {
+        uint256 tokenId = _nextTokenId++;
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+        emit URI(uri, tokenId);
+        return tokenId;
+    }
+
     function _setTokenURI(uint256 tokenId, string memory uri) internal {
         _tokenURIs[tokenId] = uri;
         emit URI(uri, tokenId);
