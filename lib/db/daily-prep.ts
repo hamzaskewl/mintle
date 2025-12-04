@@ -1,17 +1,18 @@
 /**
- * Daily game preparation - runs 1 hour before reset (11 PM EST)
+ * Daily game preparation - runs at midnight EST
+ * Fetches 6 random movies + 6 random artists and stores in DB
  */
 
 import { supabase } from './supabase'
 import { scrapeSpotifyListeners } from '@/lib/api/kworb-scraper'
 import { searchSpotifyArtist, getBestSpotifyImage } from '@/lib/api/spotify-api'
-import { fetchMovieData } from '@/lib/api/omdb'
-import moviesList from '@/data/movies.json'
+import { seededShuffle } from '@/lib/game/daily-seed'
 
 const ITEMS_PER_GAME = 6
 
 /**
  * Get tomorrow's date (in EST)
+ * Cron runs at midnight to prepare next day's games
  */
 function getTomorrowEST(): string {
   const now = new Date()
@@ -25,36 +26,6 @@ function getTomorrowEST(): string {
   return `${year}-${month}-${day}`
 }
 
-/**
- * Get list of recently used items to avoid repeats
- */
-async function getRecentlyUsed(category: string, daysBack: number = 30): Promise<Set<string>> {
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - daysBack)
-  
-  const { data } = await supabase
-    .from('used_items')
-    .select('external_id')
-    .eq('category', category)
-    .gte('last_used', cutoffDate.toISOString().split('T')[0])
-  
-  return new Set(data?.map(item => item.external_id) || [])
-}
-
-/**
- * Mark items as used
- */
-async function markAsUsed(category: string, externalIds: string[], date: string) {
-  const records = externalIds.map(id => ({
-    category,
-    external_id: id,
-    last_used: date,
-  }))
-  
-  await supabase
-    .from('used_items')
-    .upsert(records, { onConflict: 'category,external_id' })
-}
 
 /**
  * Prepare Spotify artists for tomorrow
@@ -62,51 +33,49 @@ async function markAsUsed(category: string, externalIds: string[], date: string)
 export async function prepareSpotifyGame(date: string): Promise<void> {
   console.log(`🎵 Preparing Spotify game for ${date}`)
   
-  // Scrape current top artists from kworb
+  // 1. Scrape kworb for top artists
   const allArtists = await scrapeSpotifyListeners()
   console.log(`  Scraped ${allArtists.length} artists from kworb`)
   
-  // Get recently used to avoid repeats
-  const recentlyUsed = await getRecentlyUsed('spotify', 30)
-  console.log(`  Excluding ${recentlyUsed.size} recently used artists`)
+  // 2. Use date as seed for deterministic shuffle (same for everyone)
+  const artistItems = allArtists.map(a => ({
+    id: a.name,
+    name: a.name,
+    value: a.listeners,
+    imageUrl: '',
+    subtitle: `#${a.rank}`,
+  }))
   
-  // Filter out recently used
-  const availableArtists = allArtists.filter(a => 
-    !recentlyUsed.has(a.name) && a.listeners > 1_000_000 // At least 1M listeners
-  )
-  
-  // Randomly pick 6
-  const shuffled = availableArtists.sort(() => Math.random() - 0.5)
+  const shuffled = seededShuffle(artistItems, date)
   const selected = shuffled.slice(0, ITEMS_PER_GAME)
   
-  console.log(`  Selected ${selected.length} random artists`)
+  console.log(`  Selected ${selected.length} artists (seeded by date)`)
   
-  // Fetch Spotify images for each
+  // 3. Fetch Spotify images for selected artists
   const prepared = []
   for (const artist of selected) {
-    console.log(`    Fetching: ${artist.name}`)
+    console.log(`    Fetching image: ${artist.name}`)
     const spotifyData = await searchSpotifyArtist(artist.name)
     const imageUrl = spotifyData ? getBestSpotifyImage(spotifyData.images) : ''
     
     prepared.push({
       name: artist.name,
-      listeners: artist.listeners,
+      listeners: artist.value,
       imageUrl,
-      spotifyId: spotifyData?.id || '',
+      spotifyId: spotifyData?.id || artist.id,
     })
     
-    // Rate limit
     await new Promise(resolve => setTimeout(resolve, 100))
   }
   
-  // Clear old daily game for this category
+  // 4. Clear old daily game
   await supabase
     .from('daily_games')
     .delete()
     .eq('category', 'spotify')
     .eq('game_date', date)
   
-  // Store in daily_games table
+  // 5. Store in database
   const records = prepared.map((artist, index) => ({
     category: 'spotify',
     game_date: date,
@@ -123,9 +92,6 @@ export async function prepareSpotifyGame(date: string): Promise<void> {
   
   if (error) throw error
   
-  // Mark as used
-  await markAsUsed('spotify', prepared.map(a => a.name), date)
-  
   console.log(`  ✅ Stored ${prepared.length} artists for ${date}`)
 }
 
@@ -135,53 +101,90 @@ export async function prepareSpotifyGame(date: string): Promise<void> {
 export async function prepareMoviesGame(date: string): Promise<void> {
   console.log(`🎬 Preparing Movies game for ${date}`)
   
-  // Get recently used
-  const recentlyUsed = await getRecentlyUsed('movies', 30)
-  console.log(`  Excluding ${recentlyUsed.size} recently used movies`)
+  // 1. Get yesterday's movies to avoid repeats
+  const yesterday = new Date(date)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayStr = yesterday.toISOString().split('T')[0]
   
-  // Filter available movies
-  const availableMovies = moviesList.filter(m => !recentlyUsed.has(m.id))
+  const { data: yesterdayMovies } = await supabase
+    .from('daily_games')
+    .select('external_id')
+    .eq('category', 'movies')
+    .eq('game_date', yesterdayStr)
   
-  // Randomly pick 6
-  const shuffled = availableMovies.sort(() => Math.random() - 0.5)
+  const excludeIds = new Set(yesterdayMovies?.map(m => m.external_id) || [])
+  console.log(`  Excluding ${excludeIds.size} movies from yesterday`)
+  
+  // 2. Get all movies from pool
+  const { data: allMovies, error: fetchError } = await supabase
+    .from('movies_pool')
+    .select('*')
+    .order('popularity', { ascending: false })
+  
+  if (fetchError || !allMovies || allMovies.length === 0) {
+    throw new Error('No movies in pool! Run: npm run populate-movies')
+  }
+  
+  console.log(`  Loaded ${allMovies.length} movies from pool`)
+  
+  // 3. Filter out yesterday's movies
+  const availableMovies = allMovies.filter(m => !excludeIds.has(m.imdb_id))
+  
+  // 4. Use date seed to pick 6 random (deterministic)
+  const movieItems = availableMovies.map(m => ({ id: m.imdb_id, data: m }))
+  const shuffled = seededShuffle(movieItems, date)
   const selected = shuffled.slice(0, ITEMS_PER_GAME)
   
-  console.log(`  Selected ${selected.length} random movies`)
+  console.log(`  Selected ${selected.length} movies (seeded by date)`)
   
-  // Fetch OMDB data for each
+  // 5. Fetch IMDB ratings from OMDB for the 6 selected movies
+  const { fetchOMDBRating } = await import('@/lib/api/omdb')
   const prepared = []
-  for (const movie of selected) {
-    console.log(`    Fetching: ${movie.title}`)
-    const movieData = await fetchMovieData(movie.id)
-    if (movieData) {
-      prepared.push(movieData)
+  
+  for (const item of selected) {
+    const movie = item.data
+    console.log(`    Fetching IMDB rating: ${movie.title}`)
+    
+    const omdbData = await fetchOMDBRating(movie.imdb_id)
+    
+    if (omdbData && omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
+      prepared.push({
+        imdbId: movie.imdb_id,
+        title: movie.title,
+        year: movie.year,
+        rating: parseFloat(omdbData.imdbRating),
+        poster: omdbData.Poster !== 'N/A' ? omdbData.Poster : movie.poster_url,
+      })
+    } else {
+      console.log(`      ⚠️ No IMDB rating, skipping...`)
     }
     
-    // Rate limit
     await new Promise(resolve => setTimeout(resolve, 100))
   }
   
   if (prepared.length < ITEMS_PER_GAME) {
-    throw new Error(`Only got ${prepared.length} movies, need ${ITEMS_PER_GAME}`)
+    throw new Error(`Only got ${prepared.length} movies with IMDB ratings, need ${ITEMS_PER_GAME}`)
   }
   
-  // Clear old daily game
+  console.log(`  Got IMDB ratings: ${prepared.map(m => `${m.title} (${m.rating})`).join(', ')}`)
+  
+  // 6. Clear old daily game
   await supabase
     .from('daily_games')
     .delete()
     .eq('category', 'movies')
     .eq('game_date', date)
   
-  // Store in daily_games
+  // 7. Store in database
   const records = prepared.map((movie, index) => ({
     category: 'movies',
     game_date: date,
     position: index + 1,
-    name: movie.name,
-    value: movie.value,
-    image_url: movie.imageUrl,
-    external_id: movie.id,
-    subtitle: movie.subtitle,
+    name: movie.title,
+    value: movie.rating,
+    image_url: movie.poster,
+    external_id: movie.imdbId,
+    subtitle: movie.year,
   }))
   
   const { error } = await supabase
@@ -189,9 +192,6 @@ export async function prepareMoviesGame(date: string): Promise<void> {
     .insert(records)
   
   if (error) throw error
-  
-  // Mark as used
-  await markAsUsed('movies', prepared.map(m => m.id), date)
   
   console.log(`  ✅ Stored ${prepared.length} movies for ${date}`)
 }

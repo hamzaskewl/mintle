@@ -70,21 +70,38 @@ export default function SpotifyGame() {
     const guess: 'higher' | 'lower' = clickedSide === 'right' ? 'higher' : 'lower'
     
     try {
+      // Get current and next item IDs
+      const currentItem = game.items[currentRound]
+      const nextItem = game.items[currentRound + 1]
+      
+      if (!currentItem || !nextItem) {
+        throw new Error('Missing game items')
+      }
+      
       // Verify guess server-side
       const response = await fetch('/api/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category: 'spotify',
-          date: game.date,
-          round: currentRound,
+          currentId: currentItem.id,
+          nextId: nextItem.id,
           guess,
         }),
       })
       
-      if (!response.ok) throw new Error('Verification failed')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Verify error:', errorData)
+        throw new Error(errorData.error || 'Verification failed')
+      }
       
       const result = await response.json()
+      
+      if (result.error) {
+        console.error('Verify error:', result)
+        throw new Error(result.error)
+      }
       
       // Update game items with real values
       const updatedItems = [...game.items]

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "fetch-spotify-images": "tsx --env-file=.env.local scripts/fetch-spotify-images.ts",
+    "populate-movies": "tsx --env-file=.env.local scripts/populate-movies-pool.ts",
     "prepare-daily": "tsx --env-file=.env.local scripts/test-daily-prep.ts"
   },
   "dependencies": {

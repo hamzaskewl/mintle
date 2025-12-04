@@ -66,12 +66,14 @@ export function getComparisonLabel(category: Category): { higher: string; lower:
 export function formatValue(value: number, category: Category): string {
   switch (category) {
     case 'movies':
-      return value.toFixed(1)
+      // Round to 1 decimal but show as whole number if .0
+      const rounded = Math.round(value * 10) / 10
+      return rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)
     case 'spotify':
       // Show full number with commas (e.g., 65,405,471)
-      return value.toLocaleString('en-US')
+      return Math.round(value).toLocaleString('en-US')
     default:
-      return value.toLocaleString('en-US')
+      return Math.round(value).toLocaleString('en-US')
   }
 }
 

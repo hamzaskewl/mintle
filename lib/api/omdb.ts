@@ -1,49 +1,44 @@
-import { GameItem } from '@/lib/game/types'
+/**
+ * OMDB API - Fetch IMDB ratings
+ */
 
-const OMDB_API_KEY = process.env.OMDB_API_KEY || ''
-
-interface OMDBResponse {
+export interface OMDBMovie {
   Title: string
   Year: string
   imdbRating: string
   Poster: string
   imdbID: string
-  Error?: string
 }
 
-export async function fetchMovieData(imdbId: string): Promise<GameItem | null> {
-  try {
-    const response = await fetch(
-      `https://www.omdbapi.com/?i=${imdbId}&apikey=${OMDB_API_KEY}`
-    )
-    
-    const data: OMDBResponse = await response.json()
-    
-    if (data.Error) {
-      console.error(`OMDB Error for ${imdbId}:`, data.Error)
-      return null
-    }
-    
-    const rating = parseFloat(data.imdbRating)
-    if (isNaN(rating)) {
-      return null
-    }
-    
-    return {
-      id: data.imdbID,
-      name: data.Title,
-      value: rating,
-      imageUrl: data.Poster !== 'N/A' ? data.Poster : '',
-      subtitle: data.Year,
-    }
-  } catch (error) {
-    console.error(`Failed to fetch movie ${imdbId}:`, error)
+/**
+ * Fetch movie data from OMDB by IMDB ID
+ */
+export async function fetchOMDBRating(imdbId: string): Promise<OMDBMovie | null> {
+  const apiKey = process.env.OMDB_API_KEY
+  
+  if (!apiKey) {
+    console.error('OMDB_API_KEY not configured')
     return null
   }
-}
-
-export async function fetchMultipleMovies(imdbIds: string[]): Promise<GameItem[]> {
-  const results = await Promise.all(imdbIds.map(fetchMovieData))
-  return results.filter((item): item is GameItem => item !== null)
+  
+  try {
+    const url = `https://www.omdbapi.com/?apikey=${apiKey}&i=${imdbId}`
+    const response = await fetch(url)
+    const data = await response.json()
+    
+    if (data.Response === 'False') {
+      console.error(`OMDB error for ${imdbId}:`, data.Error)
+      return null
+    }
+    
+    if (!data.imdbRating || data.imdbRating === 'N/A') {
+      return null
+    }
+    
+    return data as OMDBMovie
+  } catch (error) {
+    console.error(`Failed to fetch OMDB for ${imdbId}:`, error)
+    return null
+  }
 }
 

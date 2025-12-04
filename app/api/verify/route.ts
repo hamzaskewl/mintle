@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getDailySeed, seededShuffle } from '@/lib/game/daily-seed'
 import { supabase } from '@/lib/db/supabase'
-import { getTopArtists } from '@/lib/db/queries'
-import { fetchMultipleMovies } from '@/lib/api/omdb'
-import moviesList from '@/data/movies.json'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 interface VerifyRequest {
   category: 'movies' | 'spotify'
-  date: string
-  round: number // 0-4 (which comparison)
+  currentId: string
+  nextId: string
   guess: 'higher' | 'lower'
 }
 
@@ -22,70 +19,112 @@ interface VerifyRequest {
 export async function POST(request: Request) {
   try {
     const body: VerifyRequest = await request.json()
-    const { category, date, round, guess } = body
-    
-    // Verify it's for today
-    const today = getDailySeed()
-    if (date !== today) {
-      return NextResponse.json(
-        { error: 'Invalid date - game is for today only' },
-        { status: 400 }
-      )
-    }
-    
-    // Try to get prepared game first
-    const { data: dailyItems } = await supabase
-      .from('daily_games')
-      .select('*')
-      .eq('category', category)
-      .eq('game_date', date)
-      .order('position')
+    const { category, currentId, nextId, guess } = body
     
     let currentValue: number
     let nextValue: number
     
-    if (dailyItems && dailyItems.length >= round + 2) {
-      // Use prepared game data
-      currentValue = Number(dailyItems[round].value)
-      nextValue = Number(dailyItems[round + 1].value)
-    } else {
-      // Fallback: generate same game as API endpoint
-      if (category === 'spotify') {
-        // Scrape live from kworb
+    if (category === 'spotify') {
+      // Get from daily_games or fetch live
+      const date = getDailySeed()
+      const { data: dailyItems } = await supabase
+        .from('daily_games')
+        .select('*')
+        .eq('category', 'spotify')
+        .eq('game_date', date)
+        .in('external_id', [currentId, nextId])
+      
+      if (dailyItems && dailyItems.length === 2) {
+        const current = dailyItems.find(item => item.external_id === currentId)
+        const next = dailyItems.find(item => item.external_id === nextId)
+        if (current && next) {
+          currentValue = Number(current.value)
+          nextValue = Number(next.value)
+        } else {
+          throw new Error('Items not found in daily games')
+        }
+      } else {
+        // Fallback: fetch from kworb (for endless mode)
         const { scrapeSpotifyListeners, artistsToGameItems } = await import('@/lib/api/kworb-scraper')
         const scrapedArtists = await scrapeSpotifyListeners()
         const allArtists = artistsToGameItems(scrapedArtists)
-        const shuffled = seededShuffle(allArtists, date)
-        const items = shuffled.slice(0, 6)
+        const current = allArtists.find(a => a.id === currentId)
+        const next = allArtists.find(a => a.id === nextId)
         
-        if (items.length < round + 2) {
-          return NextResponse.json({ error: 'Not enough data' }, { status: 500 })
+        if (!current || !next) {
+          return NextResponse.json({ error: 'Items not found' }, { status: 404 })
         }
         
-        currentValue = items[round].value
-        nextValue = items[round + 1].value
+        currentValue = current.value
+        nextValue = next.value
+      }
+    } else {
+      // Movies: Get from daily_games or fetch from OMDB
+      const date = getDailySeed()
+      const { data: dailyItems } = await supabase
+        .from('daily_games')
+        .select('*')
+        .eq('category', 'movies')
+        .eq('game_date', date)
+        .in('external_id', [currentId, nextId])
+      
+      if (dailyItems && dailyItems.length === 2) {
+        const current = dailyItems.find(item => item.external_id === currentId)
+        const next = dailyItems.find(item => item.external_id === nextId)
+        if (current && next) {
+          currentValue = Number(current.value)
+          nextValue = Number(next.value)
+        } else {
+          throw new Error('Items not found in daily games')
+        }
       } else {
-        // Movies fallback
-        const shuffled = seededShuffle(moviesList, date)
-        const selectedMovies = shuffled.slice(0, 6)
-        const movieIds = selectedMovies.map(m => m.id)
-        const items = await fetchMultipleMovies(movieIds)
+        // Fallback: fetch from OMDB (for endless mode or on-demand daily)
+        const { fetchOMDBRating } = await import('@/lib/api/omdb')
         
-        if (items.length < round + 2) {
-          return NextResponse.json({ error: 'Not enough data' }, { status: 500 })
+        console.log(`Fetching OMDB ratings for: ${currentId}, ${nextId}`)
+        
+        const [currentData, nextData] = await Promise.all([
+          fetchOMDBRating(currentId),
+          fetchOMDBRating(nextId)
+        ])
+        
+        console.log(`OMDB results:`, { 
+          current: currentData?.imdbRating, 
+          next: nextData?.imdbRating 
+        })
+        
+        if (!currentData || !currentData.imdbRating || currentData.imdbRating === 'N/A') {
+          return NextResponse.json({ 
+            error: `Rating not found for ${currentId}`,
+            details: currentData ? 'Rating is N/A' : 'Movie not found'
+          }, { status: 404 })
         }
         
-        currentValue = items[round].value
-        nextValue = items[round + 1].value
+        if (!nextData || !nextData.imdbRating || nextData.imdbRating === 'N/A') {
+          return NextResponse.json({ 
+            error: `Rating not found for ${nextId}`,
+            details: nextData ? 'Rating is N/A' : 'Movie not found'
+          }, { status: 404 })
+        }
+        
+        currentValue = parseFloat(currentData.imdbRating)
+        nextValue = parseFloat(nextData.imdbRating)
+        
+        if (isNaN(currentValue) || isNaN(nextValue)) {
+          return NextResponse.json({ 
+            error: 'Invalid rating values',
+            details: { currentValue, nextValue }
+          }, { status: 500 })
+        }
       }
     }
     
     // Check if guess is correct
     let correct = false
     if (guess === 'higher') {
-      correct = nextValue >= currentValue
+      correct = nextValue > currentValue
     } else {
-      correct = nextValue <= currentValue
+      correct = nextValue < currentValue
     }
     
     return NextResponse.json({
@@ -95,8 +134,15 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Error verifying guess:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
     return NextResponse.json(
-      { error: 'Failed to verify guess', details: String(error) },
+      { 
+        error: 'Failed to verify guess', 
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     )
   }

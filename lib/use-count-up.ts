@@ -27,7 +27,8 @@ export function useCountUp(
       const easeOutQuart = 1 - Math.pow(1 - progress, 4)
       
       const currentValue = startValue + (end - startValue) * easeOutQuart
-      setCount(currentValue)
+      // Round to avoid decimals during animation
+      setCount(Math.round(currentValue * 10) / 10)
       
       if (progress < 1) {
         requestAnimationFrame(animate)
