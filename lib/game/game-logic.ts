@@ -82,7 +82,7 @@ export function formatValue(value: number, category: Category): string {
  */
 export function getPlayedKey(category: Category, date?: string): string {
   const gameDate = date || getDailySeed()
-  return `morl-played-${category}-${gameDate}`
+  return `mintle-played-${category}-${gameDate}`
 }
 
 /**
@@ -123,7 +123,7 @@ export function getTodayScore(category: Category): number | null {
  */
 export function getStreak(): { current: number; best: number } {
   if (typeof window === 'undefined') return { current: 0, best: 0 }
-  const data = localStorage.getItem('morl-streak')
+  const data = localStorage.getItem('mintle-streak')
   if (!data) return { current: 0, best: 0 }
   try {
     return JSON.parse(data)
@@ -139,7 +139,7 @@ export function updateStreak(): { current: number; best: number } {
   if (typeof window === 'undefined') return { current: 0, best: 0 }
   
   const today = getDailySeed()
-  const streakData = localStorage.getItem('morl-streak')
+  const streakData = localStorage.getItem('mintle-streak')
   
   let current = 1
   let best = 1
@@ -173,7 +173,7 @@ export function updateStreak(): { current: number; best: number } {
   best = Math.max(best, current)
   
   const newData = { current, best, lastPlayed: today }
-  localStorage.setItem('morl-streak', JSON.stringify(newData))
+  localStorage.setItem('mintle-streak', JSON.stringify(newData))
   
   return { current, best }
 }

@@ -242,7 +242,7 @@ export default function MoviesGame() {
             </motion.div>
           </Link>
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-purple">
-            MorL
+            Mintle
           </h1>
           <div className="w-12 sm:w-20" /> {/* Spacer */}
         </div>

@@ -14,7 +14,7 @@ const jetbrains = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'MorL - Daily More or Less',
+  title: 'Mintle - Daily More or Less',
   description: 'Guess higher or lower in this daily challenge game',
   viewport: {
     width: 'device-width',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     userScalable: false,
   },
   openGraph: {
-    title: 'MorL - Daily More or Less',
+    title: 'Mintle - Daily More or Less',
     description: 'Guess higher or lower in this daily challenge game',
     type: 'website',
   },
@@ -32,10 +32,10 @@ export const metadata: Metadata = {
       version: 'next',
       imageUrl: 'https://morless.vercel.app/og.png',
       button: {
-        title: 'Play MorL',
+        title: 'Play Mintle',
         action: {
           type: 'launch_miniapp',
-          name: 'MorL',
+          name: 'Mintle',
           url: 'https://morless.vercel.app'
         }
       }

@@ -27,9 +27,9 @@ export function generateNFTMetadata(
     tierEmoji = '🥈'
   }
   
-  const name = `${categoryEmoji} MorL ${categoryName} - ${score}/${total} ${tierEmoji}`
+  const name = `${categoryEmoji} Mintle ${categoryName} - ${score}/${total} ${tierEmoji}`
   
-  const description = `Daily MorL Challenge - ${categoryName}\n\n` +
+  const description = `Daily Mintle Challenge - ${categoryName}\n\n` +
     `Score: ${score}/${total}\n` +
     `Results: ${resultPattern}\n` +
     `Streak: ${streak} days\n` +

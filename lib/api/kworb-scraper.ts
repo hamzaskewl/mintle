@@ -18,7 +18,7 @@ export async function scrapeSpotifyListeners(): Promise<SpotifyArtist[]> {
   try {
     const response = await fetch('https://kworb.net/spotify/listeners.html', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MorL/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Mintle/1.0)',
       },
     })
     

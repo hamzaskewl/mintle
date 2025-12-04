@@ -105,7 +105,7 @@ export async function shareToBase(
       .map(r => r === 'correct' ? '🟢' : '🔴')
       .join('')
     
-    const shareText = `${categoryEmoji} MorL ${gameResult.category === 'movies' ? 'Movies' : 'Spotify'}\n\n` +
+    const shareText = `${categoryEmoji} Mintle ${gameResult.category === 'movies' ? 'Movies' : 'Spotify'}\n\n` +
       `Score: ${gameResult.score}/${gameResult.total}\n` +
       `${resultPattern}\n` +
       `Streak: ${gameResult.streak} days 🔥\n\n` +
@@ -129,7 +129,7 @@ export async function shareToBase(
     // Fallback to Web Share API
     if (typeof window !== 'undefined' && navigator.share) {
       await navigator.share({
-        title: 'MorL Game Result',
+        title: 'Mintle Game Result',
         text: shareText,
         url: nftUrl || 'https://morless.vercel.app'
       })

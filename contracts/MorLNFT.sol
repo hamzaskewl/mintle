@@ -4,14 +4,14 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MorLNFT is ERC721, Ownable {
+contract MintleNFT is ERC721, Ownable {
     uint256 private _nextTokenId;
     string private _baseTokenURI;
     
     // Mapping to store token URIs
     mapping(uint256 => string) private _tokenURIs;
 
-    constructor(address initialOwner) ERC721("MorL Game Results", "MORL") Ownable(initialOwner) {
+    constructor(address initialOwner) ERC721("Mintle Game Results", "MINTLE") Ownable(initialOwner) {
         _baseTokenURI = "https://morless.vercel.app/api/nft/metadata/";
     }
 

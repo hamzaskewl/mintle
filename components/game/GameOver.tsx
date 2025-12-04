@@ -45,7 +45,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
   }, [])
   
   const isPerfect = score === total
-  const shareText = `MorL ${category === 'movies' ? '🎬' : '🎵'}\n${results.map(r => r === 'correct' ? '🟢' : '🔴').join('')}\nScore: ${score}/${total}\n🔥 Streak: ${streak.current}`
+  const shareText = `Mintle ${category === 'movies' ? '🎬' : '🎵'}\n${results.map(r => r === 'correct' ? '🟢' : '🔴').join('')}\nScore: ${score}/${total}\n🔥 Streak: ${streak.current}`
   
   const otherCategory = category === 'movies' ? 'spotify' : 'movies'
   const nextUrl = hasPlayedOther ? '/' : `/play/${otherCategory}`
@@ -99,7 +99,7 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
     
     if (navigator.share) {
       await navigator.share({
-        title: 'MorL - Daily More or Less',
+        title: 'Mintle - Daily More or Less',
         text: shareTextWithNFT,
         url: nftUrl || 'https://morless.vercel.app'
       })

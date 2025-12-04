@@ -10,14 +10,14 @@
   },
   "miniapp": {
     "version": "1",
-    "name": "MorL",
+    "name": "Mintle",
     "homeUrl": "https://morless.vercel.app",
     "iconUrl": "https://morless.vercel.app/icon.png",
     "splashImageUrl": "https://morless.vercel.app/splash.png",
     "splashBackgroundColor": "#020617",
     "webhookUrl": "https://morless.vercel.app/api/webhook",
     "subtitle": "Guess which has more",
-    "description": "MorL is a fast, addictive guessing game for IMDB ratings and Spotify listeners.",
+    "description": "Mintle is a fast, addictive guessing game for IMDB ratings and Spotify listeners.",
     "screenshotUrls": [
       "https://morless.vercel.app/screen1.png"
     ],
@@ -25,7 +25,7 @@
     "tags": ["game", "puzzle", "music", "movies"],
     "heroImageUrl": "https://morless.vercel.app/og.png",
     "tagline": "More or Less? Prove it.",
-    "ogTitle": "MorL",
+    "ogTitle": "Mintle",
     "ogDescription": "Guess which artist has more monthly listeners or higher IMDB rating.",
     "ogImageUrl": "https://morless.vercel.app/og.png",
     "noindex": false

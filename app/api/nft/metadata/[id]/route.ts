@@ -38,8 +38,8 @@ export async function GET(
     // This is a fallback - better to store in database
     // For now, return a basic metadata structure
     return NextResponse.json({
-      name: `MorL Game Result #${tokenId}`,
-      description: 'Daily MorL Challenge Game Result NFT',
+      name: `Mintle Game Result #${tokenId}`,
+      description: 'Daily Mintle Challenge Game Result NFT',
       image: `https://morless.vercel.app/api/nft/image?tokenId=${tokenId}`,
       external_url: 'https://morless.vercel.app',
       attributes: [

@@ -55,7 +55,7 @@ export default function Home() {
         >
           <h1 className="text-5xl font-bold">
             <span className="bg-gradient-to-r from-accent-cyan via-accent-blue to-accent-purple bg-clip-text text-transparent">
-              MorL
+              Mintle
             </span>
           </h1>
           <p className="text-text-secondary">

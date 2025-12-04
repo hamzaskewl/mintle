@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 // Also handle GET requests (for webhook verification)
 export async function GET() {
   return NextResponse.json({ 
-    message: 'MorL Mini App Webhook',
+    message: 'Mintle Mini App Webhook',
     status: 'active' 
   })
 }
