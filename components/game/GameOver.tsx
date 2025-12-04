@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { mintNFT, shareToBase } from '@/lib/nft/mint'
 import { GameResultNFT } from '@/lib/nft/types'
+import { useAccount } from 'wagmi'
 
 interface GameOverProps {
   score: number
@@ -22,6 +23,7 @@ interface GameOverProps {
 
 export function GameOver({ score, total, results, category }: GameOverProps) {
   const router = useRouter()
+  const { address, isConnected } = useAccount() // Get address from Base Account via Wagmi
   const [timeUntilReset, setTimeUntilReset] = useState(getTimeUntilReset())
   const [streak, setStreak] = useState({ current: 0, best: 0 })
   const [hasPlayedOther, setHasPlayedOther] = useState(false)
@@ -57,6 +59,13 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
     setMintSuccess(false)
     
     try {
+      // Check if Base Account is connected
+      if (!isConnected && !address) {
+        setMintError('Please connect your Base Account to mint NFTs. The Base Account should connect automatically in the Base App.')
+        setIsMinting(false)
+        return
+      }
+      
       const gameResult: GameResultNFT = {
         category,
         score,
@@ -67,8 +76,11 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
         perfect: isPerfect
       }
       
+      console.log('Minting with address:', address, 'isConnected:', isConnected)
+      
       // Mint NFT - this will actually send the transaction on-chain
-      const mintResult = await mintNFT(gameResult)
+      // Pass the address from Base Account if available
+      const mintResult = await mintNFT(gameResult, address || undefined)
       
       if (mintResult.success) {
         // Check if we got a transaction hash (actual on-chain mint)

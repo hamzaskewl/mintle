@@ -4,7 +4,7 @@ import { sdk } from '@farcaster/miniapp-sdk'
 import { MintNFTResponse, GameResultNFT } from './types'
 import { getContractAddress, prepareMintTransaction, NFT_ABI } from './contract'
 import { encodeFunctionData, type Address } from 'viem'
-import { sendCalls, getCapabilities } from '@wagmi/core'
+import { sendCalls, getCapabilities, getAccount } from '@wagmi/core'
 import { config } from '@/lib/wagmi/config'
 import { base, baseSepolia } from 'viem/chains'
 
@@ -107,12 +107,25 @@ export async function mintNFT(
       // Send transaction using Wagmi with Base Account
       // This uses sendCalls which works with Base Account and supports paymaster
       try {
-        if (!address) {
-          throw new Error('No wallet connected. Please connect your wallet to mint.')
+        // Get account from Wagmi if address not provided
+        let accountAddress = address
+        if (!accountAddress) {
+          try {
+            const account = getAccount(config as any)
+            if (account.address) {
+              accountAddress = account.address
+            }
+          } catch (e) {
+            console.log('Could not get address from Wagmi:', e)
+          }
+        }
+        
+        if (!accountAddress) {
+          throw new Error('No wallet connected. Please connect your Base Account to mint.')
         }
         
         const chainId = isTestnet ? baseSepolia.id : base.id
-        const account = address as Address
+        const account = accountAddress as Address
         
         // Check if paymaster capability is supported
         let supportsPaymaster = false
