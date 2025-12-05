@@ -2,8 +2,8 @@
 
 import { sdk } from '@farcaster/miniapp-sdk'
 import { MintNFTResponse, GameResultNFT } from './types'
-import { getContractAddress, prepareMintTransaction, NFT_ABI } from './contract'
-import { encodeFunctionData, type Address } from 'viem'
+import { getContractAddress, prepareMintTransaction, NFT_ABI, getBaseClient } from './contract'
+import { encodeFunctionData, type Address, decodeEventLog } from 'viem'
 import { sendCalls, getCapabilities, getAccount } from '@wagmi/core'
 import { config } from '@/lib/wagmi/config'
 import { base, baseSepolia } from 'viem/chains'
@@ -219,9 +219,53 @@ export async function mintNFT(
         console.log('✅ Transaction sent via Base Account! ID:', txId)
         console.log('✅ Paymaster sponsored:', supportsPaymaster && !!paymasterUrl)
         
-        // Note: sendCalls returns a transaction ID
-        // The transaction will be executed by the Base Account
-        // The actual transaction hash will be available after confirmation
+        // Try to get the actual on-chain tokenId from the transaction receipt
+        // Note: This requires waiting for the transaction to be confirmed
+        let onChainTokenId: string | undefined = undefined
+        
+        // If txId looks like a transaction hash (starts with 0x), try to wait for it
+        if (txId && txId.startsWith('0x') && txId.length === 66) {
+          try {
+            const publicClient = getBaseClient(isTestnet)
+            const receipt = await publicClient.waitForTransactionReceipt({
+              hash: txId as `0x${string}`,
+              timeout: 30000, // 30 second timeout
+            })
+            
+            // Parse Transfer event to get tokenId
+            const transferEvent = receipt.logs.find((log: any) => {
+              try {
+                const decoded = decodeEventLog({
+                  abi: NFT_ABI,
+                  data: log.data,
+                  topics: log.topics,
+                })
+                return decoded.eventName === 'Transfer' && decoded.args.from === '0x0000000000000000000000000000000000000000'
+              } catch {
+                return false
+              }
+            })
+            
+            if (transferEvent) {
+              try {
+                const decoded = decodeEventLog({
+                  abi: NFT_ABI,
+                  data: transferEvent.data,
+                  topics: transferEvent.topics,
+                })
+                if (decoded.eventName === 'Transfer' && decoded.args.tokenId) {
+                  onChainTokenId = decoded.args.tokenId.toString()
+                  console.log('✅ Got on-chain tokenId from transaction:', onChainTokenId)
+                }
+              } catch (e) {
+                console.warn('Could not decode Transfer event:', e)
+              }
+            }
+          } catch (waitError) {
+            console.warn('Could not wait for transaction receipt:', waitError)
+            // Continue without on-chain tokenId - user can find it from transaction link
+          }
+        }
         
         const baseScanUrl = isTestnet
           ? `https://sepolia.basescan.org/tx/${txId}`
@@ -233,7 +277,7 @@ export async function mintNFT(
         return {
           success: true,
           metadataUri,
-          tokenId,
+          tokenId: onChainTokenId || tokenId, // Use on-chain tokenId if available, otherwise metadata tokenId
           txHash: txId, // Transaction ID - will be confirmed by Base Account
           paymasterSponsored: supportsPaymaster && !!paymasterUrl,
         }

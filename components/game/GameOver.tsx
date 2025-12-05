@@ -120,7 +120,11 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
           
           // Create NFT page URL (token view on BlockScout Sepolia)
           const contractAddress = '0xCc083Bf246800466E831907C2f9D04389d86f265' // Sepolia contract
-          const nftPageUrl = mintResult.tokenId
+          
+          // Check if tokenId is numeric (on-chain tokenId) vs string (metadata tokenId)
+          // The mint function now tries to get the on-chain tokenId from the transaction receipt
+          const isNumericTokenId = mintResult.tokenId && /^\d+$/.test(mintResult.tokenId.toString())
+          const nftPageUrl = isNumericTokenId
             ? `https://base-sepolia.blockscout.com/token/${contractAddress}/instance/${mintResult.tokenId}`
             : baseScanUrl
           

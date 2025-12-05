@@ -28,6 +28,7 @@ export const NFT_ABI = parseAbi([
   'function balanceOf(address owner) external view returns (uint256)',
   'function signer() external view returns (address)',
   'function setSigner(address newSigner) external',
+  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
 ])
 
 /**
