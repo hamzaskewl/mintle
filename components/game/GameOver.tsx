@@ -118,10 +118,10 @@ export function GameOver({ score, total, results, category }: GameOverProps) {
             ? `https://sepolia.basescan.org/tx/${mintResult.txHash}`
             : mintResult.metadataUri || null
           
-          // Create NFT page URL (token view on BaseScan Sepolia)
-          const contractAddress = '0x35fd374892Eb1Aa77260549e5914c41FAA1f0B2d' // Sepolia contract
+          // Create NFT page URL (token view on BlockScout Sepolia)
+          const contractAddress = '0xCc083Bf246800466E831907C2f9D04389d86f265' // Sepolia contract
           const nftPageUrl = mintResult.tokenId
-            ? `https://sepolia.basescan.org/token/${contractAddress}?a=${mintResult.tokenId}`
+            ? `https://base-sepolia.blockscout.com/token/${contractAddress}/instance/${mintResult.tokenId}`
             : baseScanUrl
           
           setNftUrl(nftPageUrl || baseScanUrl)
