@@ -73,7 +73,7 @@ export default function Home() {
             <div className="glass-card px-6 py-3 flex items-center gap-4">
               <div className="text-2xl">🔥</div>
               <div>
-                <div className="text-lg font-bold text-text-primary">{streak.current} day streak</div>
+                <div className="text-sm font-bold text-text-primary">{streak.current} day streak</div>
                 <div className="text-xs text-text-muted">Best: {streak.best} days</div>
               </div>
             </div>
