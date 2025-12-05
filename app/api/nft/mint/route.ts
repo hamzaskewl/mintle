@@ -12,9 +12,8 @@ export const dynamic = 'force-dynamic'
  * API endpoint to mint an NFT for a completed game
  * This endpoint:
  * 1. Verifies the user actually played and got this score (from database)
- * 2. Checks if they've already minted for this day/category
- * 3. Generates metadata and signs it with server private key
- * 4. Returns signed metadata for on-chain minting
+ * 2. Generates metadata and signs it with server private key
+ * 3. Returns signed metadata for on-chain minting
  */
 export async function POST(request: Request) {
   try {
@@ -78,23 +77,7 @@ export async function POST(request: Request) {
       )
     }
     
-    // STEP 2: Check if user has already minted for this day/category
-    const { data: existingMint } = await supabase
-      .from('nft_metadata')
-      .select('token_id, minted_by, date, category')
-      .eq('minted_by', normalizedAddress)
-      .eq('category', category)
-      .eq('date', gameDate)
-      .limit(1)
-    
-    if (existingMint && existingMint.length > 0) {
-      return NextResponse.json(
-        { error: 'You have already minted an NFT for this game. One mint per day per category.' },
-        { status: 409 }
-      )
-    }
-    
-    // STEP 3: Generate metadata
+    // STEP 2: Generate metadata
     const gameResult: GameResultNFT = {
       category,
       score,
@@ -112,7 +95,7 @@ export async function POST(request: Request) {
     const tokenId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const metadataUri = `https://mintle.vercel.app/api/nft/metadata/${tokenId}`
     
-    // STEP 4: Sign the mint message
+    // STEP 3: Sign the mint message
     const privateKey = process.env.NFT_SIGNER_PRIVATE_KEY
     if (!privateKey) {
       console.error('NFT_SIGNER_PRIVATE_KEY not set in environment variables')
@@ -139,7 +122,7 @@ export async function POST(request: Request) {
       privateKey as `0x${string}`
     )
     
-    // STEP 5: Store metadata in database (before minting, so we can track it)
+    // STEP 4: Store metadata in database (before minting, so we can track it)
     try {
       const { error: dbError } = await supabase
         .from('nft_metadata')
